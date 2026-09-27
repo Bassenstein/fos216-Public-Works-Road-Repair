@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cleveland Pavement Management Study — The FixOurStreets216 Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --orange:#E1560F; --orange-br:#FF6A1A;
+    --teal:#0E8E84; --teal-br:#19C3B2;
+    --steel:#243038; --steel-lt:#2e3d47;
+    --bg:#161d22; --panel:#1c262c; --panel2:#212d34;
+    --ink:#e8eef0; --muted:#8ea3ad; --line:#33454f;
+    --gA:#19C3B2; --gB:#4fb87a; --gC:#e0b53a; --gD:#E1560F; --gF:#c53a2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Archivo',system-ui,sans-serif;line-height:1.5;
+    background-image:radial-gradient(circle at 20% -10%,rgba(25,195,178,.06),transparent 40%),radial-gradient(circle at 90% 0%,rgba(225,86,15,.06),transparent 35%);}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 20px 80px}
+  code,.mono{font-family:'JetBrains Mono',monospace}
+
+  /* ---- Title block ---- */
+  header.title{background:linear-gradient(180deg,#1b262d,#141a1f);
+    border-bottom:3px solid var(--orange);padding:34px 20px 0;margin-bottom:0}
+  .titleinner{max-width:1200px;margin:0 auto}
+  .kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.28em;
+    color:var(--teal-br);text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:clamp(28px,4.4vw,50px);font-weight:900;line-height:1.02;margin:0 0 6px;
+    letter-spacing:-.5px}
+  h1 .em{color:var(--orange-br)}
+  .sub{color:var(--muted);font-size:15px;max-width:760px;margin-bottom:26px}
+  .titleblock{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  .tbcell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 14px}
+  .tbcell .lbl{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.18em;
+    color:var(--muted);text-transform:uppercase}
+  .tbcell .val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);
+    font-weight:600;margin-top:3px}
+
+  /* ---- Sections ---- */
+  section{margin-top:44px}
+  .sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:18px;
+    border-bottom:1px solid var(--line);padding-bottom:10px}
+  .secnum{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--orange-br);font-weight:700}
+  h2{font-size:24px;font-weight:800;margin:0;letter-spacing:-.3px}
+  h3{font-size:16px;font-weight:700;margin:0 0 4px;color:var(--ink)}
+  p.lead{color:var(--muted);font-size:14.5px;max-width:900px}
+
+  /* ---- KPI cards ---- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;
+    position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal-br)}
+  .kpi.orange::before{background:var(--orange-br)}
+  .kpi.red::before{background:var(--gF)}
+  .kpi .num{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;line-height:1;color:#fff}
+  .kpi .cap{font-size:12px;color:var(--muted);margin-top:8px;letter-spacing:.02em}
+
+  /* ---- Panels ---- */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .grid2c{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+  @media(max-width:820px){.grid2,.grid2c{grid-template-columns:1fr}}
+
+  /* ---- Tables ---- */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line)}
+  th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);font-weight:600}
+  td.mono,th.r,td.r{text-align:right;font-family:'JetBrains Mono',monospace}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  .gradechip{display:inline-block;width:22px;text-align:center;border-radius:5px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;color:#0d1418;padding:2px 0}
+  .gA{background:var(--gA)}.gB{background:var(--gB)}.gC{background:var(--gC)}
+  .gD{background:var(--gD);color:#fff}.gF{background:var(--gF);color:#fff}
+
+  /* ---- Method matrix ---- */
+  .methodrow{display:grid;grid-template-columns:60px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .methodrow:last-child{border-bottom:none}
+  .mbadge{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;
+    border-radius:8px;display:flex;align-items:center;justify-content:center;color:#0d1418}
+  .mtag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;
+    padding:3px 8px;border-radius:20px;letter-spacing:.08em;margin-top:6px;
+    border:1px solid var(--teal);color:var(--teal-br)}
+  .mtag.o{border-color:var(--orange);color:var(--orange-br)}
+  .mtag.r{border-color:var(--gF);color:#e88}
+
+  /* ---- Calculator ---- */
+  .calc{background:linear-gradient(180deg,#1f2b32,#1a242a);border:1px solid var(--teal);
+    border-radius:14px;padding:24px;box-shadow:0 0 0 1px rgba(25,195,178,.08),0 18px 40px -20px rgba(0,0,0,.6)}
+  .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+  .ctrl label{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:7px}
+  .ctrl label .v{font-family:'JetBrains Mono',monospace;color:var(--orange-br);font-weight:700}
+  input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:5px;
+    background:var(--steel-lt);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+    border-radius:50%;background:var(--orange-br);cursor:pointer;border:2px solid #10181c}
+  input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;
+    background:var(--orange-br);cursor:pointer;border:2px solid #10181c}
+  .ctrl .hint{font-size:10.5px;color:var(--muted);margin-top:5px;font-family:'JetBrains Mono',monospace}
+  .readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:22px}
+  .ro{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:9px;padding:14px}
+  .ro .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#fff}
+  .ro .l{font-size:11px;color:var(--muted);margin-top:5px}
+  .modewrap{display:flex;gap:8px;margin:2px 0 20px;flex-wrap:wrap}
+  .modebtn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 16px;border-radius:8px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-weight:600}
+  .modebtn.active{background:var(--orange);border-color:var(--orange-br);color:#fff}
+
+  /* ---- Charts ---- */
+  .chartcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+  .chartcard h3{margin-bottom:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .axislbl{font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--muted)}
+  .gridline{stroke:var(--line);stroke-width:1}
+
+  .callout{border-left:3px solid var(--orange);background:rgba(225,86,15,.07);
+    padding:14px 18px;border-radius:0 8px 8px 0;font-size:13.5px;color:#f0d9cc}
+  .note{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+  /* ---- Footer / logo ---- */
+  footer{margin-top:70px;border-top:1px solid var(--line);padding-top:30px;text-align:center}
+  .logo-lock{display:inline-flex;flex-direction:column;align-items:center;gap:12px}
+  .logomark{filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 9px rgba(255,255,255,.65)) drop-shadow(0 0 21px rgba(255,255,255,.35)) drop-shadow(0 0 45px rgba(255,199,44,.20))}
+  .wordmark{font-weight:800;font-size:16px;letter-spacing:.01em;color:#fff}
+  .foot-meta{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);
+    margin-top:14px;letter-spacing:.06em;line-height:1.9}
+  .disclaimer{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6b7d87;margin-top:8px}
+  .pl-f{display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .pl-f select,.pl-f input{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:14px;min-width:200px;letter-spacing:0;text-transform:none}
+  #pl-alloc tr{cursor:pointer}
+</style>
+</head>
+<body>
+
+<header class="title">
+  <div class="titleinner">
+    <div class="kicker">The FixOurStreets216 Project · Municipal Infrastructure Series</div>
+    <h1>Cleveland Pavement <span class="em">Management Study</span></h1>
+    <div class="sub">A data-driven, PCR-graded maintenance &amp; capital investment framework for the City of Cleveland street network — with an interactive <span id="hz-sub">10</span>-year budget model spanning infrared repair, mill-and-repave, and saw-cut reconstruction.</div>
+    <div class="titleblock">
+      <div class="tbcell"><div class="lbl">Project</div><div class="val">FOS216-PMS-001</div></div>
+      <div class="tbcell"><div class="lbl">Network</div><div class="val" id="tb-seg">— segments</div></div>
+      <div class="tbcell"><div class="lbl">Condition Year</div><div class="val">2025 PCR</div></div>
+      <div class="tbcell"><div class="lbl">Horizon</div><div class="val">2026–<span id="hz-endyr">2035</span></div></div>
+      <div class="tbcell"><div class="lbl">Rev</div><div class="val">REV A / 2026-08-06</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ 1. NETWORK SNAPSHOT ============ -->
+  <section id="snapshot">
+    <div class="sechead"><span class="secnum">01</span><h2>Network Condition Snapshot</h2></div>
+    <p class="lead">Every figure below is computed live from the 2025 Pavement Condition Rating (PCR) file for the Cleveland network. Grades follow your band definitions: <b>A</b>&nbsp;91–100, <b>B</b>&nbsp;81–90, <b>C</b>&nbsp;71–80, <b>D</b>&nbsp;61–70, <b>F</b>&nbsp;60 and below.</p>
+    <div class="kpis" style="margin-top:18px">
+      <div class="kpi"><div class="num" id="k-seg">—</div><div class="cap">Rated street segments</div></div>
+      <div class="kpi orange"><div class="num" id="k-pcr">—</div><div class="cap">Network mean PCR (Fair)</div></div>
+      <div class="kpi"><div class="num" id="k-sqyd">—</div><div class="cap">Total surface area (SY)</div></div>
+      <div class="kpi red"><div class="num" id="k-fpct">—</div><div class="cap">Segments graded F (failed)</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. GRADE DISTRIBUTION ============ -->
+  <section id="grades">
+    <div class="sechead"><span class="secnum">02</span><h2>Condition by Grade</h2></div>
+    <div class="grid2c">
+      <div class="chartcard">
+        <h3>Surface Area by PCR Grade</h3>
+        <div id="donut"></div>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+      <div class="chartcard">
+        <h3>Grade Ledger</h3>
+        <table>
+          <thead><tr><th>Grade</th><th>PCR</th><th class="r">Segments</th><th class="r">Area (SY)</th><th class="r">Miles</th></tr></thead>
+          <tbody id="grade-table"></tbody>
+        </table>
+        <div class="callout" style="margin-top:16px" id="grade-callout">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. TREATMENT METHODS ============ -->
+  <section id="methods">
+    <div class="sechead"><span class="secnum">03</span><h2>Treatment Method &amp; Decision Matrix</h2></div>
+    <p class="lead">Each grade band maps to the most cost-effective treatment. Preventive infrared work protects streets that are still sound; repaving rehabilitates the middle; saw-cut reconstruction is reserved for full structural failures — the method of last resort and the most expensive per square yard.</p>
+    <div class="panel" style="margin-top:16px">
+      <div class="methodrow">
+        <div class="mbadge gA">A</div>
+        <div>
+          <h3>Crack Seal / Preventive Hold</h3>
+          <p class="lead" style="margin:2px 0 0">Excellent pavement (PCR 91–100). Seal cracks before water intrusion begins; no surface treatment required this cycle. Lowest cost-per-mile in the program.</p>
+          <span class="mtag">PREVENTIVE · SEALANT</span>
+        </div>
+      </div>
+      <div class="methodrow">
+        <div class="mbadge gB">B</div>
+        <div>
+          <h3>Infrared Spot Repair — Potholes &amp; Cracks</h3>
+          <p class="lead" style="margin:2px 0 0">Good pavement (PCR 81–90). Kasi Infrared Patriot heats, scarifies and recompacts distressed patches with no cold joints — a seamless, waterproof repair that keeps a B street from slipping to C. Only the distressed fraction of the surface is treated.</p>
+          <span class="mtag">INFRARED · CORRECTIVE-PREVENTIVE</span>
+        </div>
+      </div>
+      <div class="methodrow">
+        <div class="mbadge gC">C</div>
+        <div>
+          <h3>Infrared Repair (Heavier) → Repave Watchlist</h3>
+          <p class="lead" style="margin:2px 0 0">Fair pavement (PCR 71–80). Infrared remains viable for potholes, utility-cut and edge repair; segments trending toward D are flagged for mill-and-overlay in the next cycle.</p>
+          <span class="mtag">INFRARED</span>
+        </div>
+      </div>
+      <div class="methodrow">
+        <div class="mbadge gD">D</div>
+        <div>
+          <h3>Mill &amp; Repave — Full-Width Overlay</h3>
+          <p class="lead" style="margin:2px 0 0">Poor pavement (PCR 61–70). Structurally sound base but a failing surface: repave the full segment area. This is your adjustable <b>$/SY repave rate</b> in the model below.</p>
+          <span class="mtag o">REPAVE · $/SY ADJUSTABLE</span>
+        </div>
+      </div>
+      <div class="methodrow">
+        <div class="mbadge gF">F</div>
+        <div>
+          <h3>Saw-Cut, Remove &amp; Replace — Full-Depth Reconstruction</h3>
+          <p class="lead" style="margin:2px 0 0">Failed pavement (PCR ≤ 60). Base course has lost support; surface treatment would fail within a season. Saw-cut to full depth, rebuild base, and repave. Longest-lived repair (10–15+ yrs) and the highest unit cost.</p>
+          <span class="mtag r">RECONSTRUCTION · FULL-DEPTH</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. INTERACTIVE MODEL ============ -->
+  <section id="model">
+    <div class="sechead"><span class="secnum">04</span><h2>Interactive <span id="hz-h1">10</span>-Year Budget Model</h2></div>
+    <p class="lead">Set your unit costs and annual budget. The model runs a worst-first program: reconstruct F, repave D, then apply preventive infrared to C and B — while the untreated network keeps deteriorating. Every number, table and chart below updates live.</p>
+
+    <div class="modewrap">
+      <button class="modebtn active" id="mode-budget">Budget-driven — "what can I afford?"</button>
+      <button class="modebtn" id="mode-target">Target-driven — "clear the F backlog in N years"</button>
+    </div>
+    <div class="modewrap" style="margin-top:-6px">
+      <span id="hz-label" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);align-self:center;letter-spacing:.14em">HORIZON</span>
+      <button class="modebtn hz active" data-hz="10">10 yrs</button>
+      <button class="modebtn hz" data-hz="15">15 yrs</button>
+      <button class="modebtn hz" data-hz="20">20 yrs</button>
+      <button class="modebtn hz" data-hz="25">25 yrs</button>
+      <button class="modebtn hz" data-hz="30">30 yrs</button>
+    </div>
+
+    <div class="calc">
+      <div class="ctrls">
+        <div class="ctrl">
+          <label>Repave rate — Grade D <span class="v"><span id="v-repave">45</span> $/SY</span></label>
+          <input type="range" id="s-repave" min="20" max="90" value="45" step="1">
+          <div class="hint">mill &amp; full-width overlay</div>
+        </div>
+        <div class="ctrl">
+          <label>Saw-cut reconstruction — Grade F <span class="v"><span id="v-sawcut">95</span> $/SY</span></label>
+          <input type="range" id="s-sawcut" min="60" max="160" value="95" step="1">
+          <div class="hint">full-depth remove &amp; replace</div>
+        </div>
+        <div class="ctrl">
+          <label>Infrared rate — A/B/C <span class="v"><span id="v-ir">28</span> $/SY</span></label>
+          <input type="range" id="s-ir" min="12" max="45" value="28" step="1">
+          <div class="hint">applied to distressed area only</div>
+        </div>
+        <div class="ctrl">
+          <label>Distressed area treated by infrared <span class="v"><span id="v-irpct">12</span>%</span></label>
+          <input type="range" id="s-irpct" min="4" max="30" value="12" step="1">
+          <div class="hint">% of a segment that is cracks/potholes</div>
+        </div>
+        <div class="ctrl" id="wrap-budget">
+          <label>Annual program budget <span class="v">$<span id="v-budget">104</span>M</span></label>
+          <input type="range" id="s-budget" min="20" max="250" value="104" step="2">
+          <div class="hint">total repair capital per year</div>
+        </div>
+        <div class="ctrl" id="wrap-target" style="display:none">
+          <label>Years to clear F backlog <span class="v"><span id="v-target">10</span> yrs</span></label>
+          <input type="range" id="s-target" min="3" max="30" value="10" step="1">
+          <div class="hint">solves for required reconstruction budget</div>
+        </div>
+        <div class="ctrl">
+          <label>Deterioration rate <span class="v"><span id="v-det">7</span>%/yr</span></label>
+          <input type="range" id="s-det" min="0" max="15" value="7" step="1">
+          <div class="hint">untreated area dropping one grade/yr</div>
+        </div>
+      </div>
+
+      <div id="alloc-block">
+        <div class="note" style="margin:22px 0 12px;color:var(--teal-br);letter-spacing:.1em">BUDGET ALLOCATION — MIX OF FIX <span style="color:var(--muted)">(auto-normalized to 100%; leftover in any track spills to reconstruction)</span></div>
+        <div class="ctrls">
+          <div class="ctrl">
+            <label>Reconstruction — Grade F <span class="v"><span id="v-alRecon">50</span>%</span></label>
+            <input type="range" id="s-alRecon" min="0" max="100" value="50" step="5">
+            <div class="hint">saw-cut, remove &amp; replace</div>
+          </div>
+          <div class="ctrl">
+            <label>Repave — Grade D <span class="v"><span id="v-alRepave">30</span>%</span></label>
+            <input type="range" id="s-alRepave" min="0" max="100" value="30" step="5">
+            <div class="hint">mill &amp; overlay at your $/SY</div>
+          </div>
+          <div class="ctrl">
+            <label>Preventive infrared — B/C <span class="v"><span id="v-alPrev">20</span>%</span></label>
+            <input type="range" id="s-alPrev" min="0" max="100" value="20" step="5">
+            <div class="hint">protect good streets from slipping</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="readouts" id="readouts"></div>
+      <div class="note" style="margin-top:14px" id="model-note">—</div>
+    </div>
+  </section>
+
+  <!-- ============ 5. ANNUAL PLAN TABLE ============ -->
+  <section id="plan">
+    <div class="sechead"><span class="secnum">05</span><h2><span id="hz-h2">10</span>-Year Capital Work Program</h2></div>
+    <div class="chartcard">
+      <h3>Annual Spend by Method</h3>
+      <div id="stackchart"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--gF)"></i>Saw-cut reconstruction (F)</span>
+        <span><i class="sw" style="background:var(--gD)"></i>Mill &amp; repave (D)</span>
+        <span><i class="sw" style="background:var(--gC)"></i>Infrared preventive (C)</span>
+        <span><i class="sw" style="background:var(--gB)"></i>Infrared preventive (B)</span>
+      </div>
+    </div>
+    <div class="chartcard" style="margin-top:20px">
+      <h3>Year-by-Year Program Ledger</h3>
+      <div style="overflow:auto;max-height:470px">
+      <table>
+        <thead><tr>
+          <th>FY</th><th class="r">Total Budget</th>
+          <th class="r">Reconstruct (SY)</th><th class="r">Repave (SY)</th><th class="r">Infrared (SY)</th>
+          <th class="r">Segments</th><th class="r">Lane-Mi</th><th class="r">F Backlog Left</th><th class="r">Mean PCR</th>
+        </tr></thead>
+        <tbody id="plan-table"></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6. PROJECTION ============ -->
+  <section id="projection">
+    <div class="sechead"><span class="secnum">06</span><h2>Projected Network Condition</h2></div>
+    <div class="grid2">
+      <div class="chartcard">
+        <h3>Network Mean PCR Trajectory</h3>
+        <div id="pcrline"></div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--teal-br)"></i>Your program</span>
+          <span><i class="sw" style="background:#6b7d87"></i>Do-nothing (deterioration only)</span>
+          <span><i class="sw" style="background:var(--orange-br);height:2px;width:18px"></i>Target PCR 70</span>
+        </div>
+      </div>
+      <div class="chartcard">
+        <h3>Grade Mix Over Time</h3>
+        <div id="mixchart"></div>
+        <div class="legend">
+          <span><i class="sw gA"></i>A</span><span><i class="sw gB"></i>B</span>
+          <span><i class="sw gC"></i>C</span><span><i class="sw gD"></i>D</span><span><i class="sw gF"></i>F</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 7. WARD TABLE ============ -->
+  <section id="wards">
+    <div class="sechead"><span class="secnum">07</span><h2>Condition by Ward</h2></div>
+    <p class="lead">Surface area (SY) in each grade, by ward. Use this to target the annual program equitably — the highest F-area wards carry the largest reconstruction backlog.</p>
+    <div class="chartcard" style="margin-top:16px">
+      <h3>Interactive Ward Pavement Map</h3>
+      <p class="lead" style="margin:2px 0 12px">Wards are colored by mean PCR grade. <b>Click any ward</b> — on the map or in the table below — to see its pavement condition: mean PCR, grade, the A–F grade mix, and failed-pavement (F) backlog. The map and table stay in sync. Ward 8 (Hough) holds the largest F backlog (~1.27M SY).</p>
+      <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0a1422">
+        <iframe id="ward8-frame" title="Ward 8 (Hough) Interactive Map" loading="lazy" style="width:100%;height:620px;border:0;display:block"></iframe>
+      </div>
+      <div class="note" style="margin-top:8px">Live interactive map — requires an internet connection (Leaflet, CartoDB basemap, City ward boundaries). Pan/zoom inside the frame; the study controls above are unaffected.</div>
+    </div>
+    <div class="chartcard" style="margin-top:16px;overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Ward</th><th class="r">Segments</th><th class="r">Mean PCR</th>
+          <th class="r">A</th><th class="r">B</th><th class="r">C</th><th class="r">D</th><th class="r">F</th>
+          <th class="r">F-Reconstruct $</th>
+        </tr></thead>
+        <tbody id="ward-table"></tbody>
+        <tfoot id="ward-foot"></tfoot>
+      </table>
+    </div>
+    <div class="note" style="margin-top:10px">Totals are in square yards (SY). Ward-total mean PCR is weighted by surface area. *Citywide is the full 2025 condition file; it includes 125 segments that fall outside the 15 wards (unassigned or boundary streets), so it runs slightly higher than the ward total. F-Reconstruct $ = ward F-area × current saw-cut rate.</div>
+
+    <!-- ============ WARD BUDGET PLANNER (SRF + Casino) ============ -->
+    <div class="chartcard" id="planner" style="margin-top:22px">
+      <h3>Ward Budget Planner — Special Revenue Fund + Council Casino Funds</h3>
+      <p class="lead" style="margin:2px 0 14px">Each of the 15 wards receives a share of the annual program budget set in Section 04, allocated <b>worst to best</b>: a ward's share equals its share of the citywide repair need at the current unit rates (F reconstruction + D repave + infrared on B/C). A Council member can add Casino funds on top and see the ward's projected year-end PCR.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;margin-bottom:16px">
+        <label class="pl-f"><span>Ward</span><select id="pl-ward"></select></label>
+        <label class="pl-f"><span>Casino funds added ($)</span><input id="pl-casino" type="number" min="0" step="25000" value="250000"></label>
+        <div class="pl-f"><span>Casino funds apply</span>
+          <div style="display:flex;gap:6px">
+            <button class="modebtn pl-rep active" data-rep="once" type="button">This year only</button>
+            <button class="modebtn pl-rep" data-rep="every" type="button">Every year</button>
+          </div></div>
+      </div>
+      <div class="kpis" id="pl-kpis"></div>
+      <div class="grid2" style="margin-top:18px">
+        <div style="overflow-x:auto">
+          <h3 style="font-size:14px">5-Year Ward Outlook — year-end mean PCR</h3>
+          <table><thead><tr><th>Year</th><th class="r">No funding</th><th class="r">SRF only</th><th class="r">SRF + Casino</th><th class="r">F left (SY)</th></tr></thead>
+          <tbody id="pl-outlook"></tbody></table>
+        </div>
+        <div style="overflow-x:auto">
+          <h3 style="font-size:14px">SRF Allocation — worst to best</h3>
+          <table><thead><tr><th>Ward</th><th class="r">Mean PCR</th><th class="r">Repair need</th><th class="r">Share</th><th class="r">SRF $/yr</th></tr></thead>
+          <tbody id="pl-alloc"></tbody></table>
+        </div>
+      </div>
+      <div class="note" style="margin-top:10px">Planning model: each ward runs the same program as Section 04 (worst-first in target mode, or your fix-mix in budget mode) on its own 2025 A–F square yards, at citywide unit rates and deterioration. Year-end PCR is calibrated so 2025 matches the ward's actual mean PCR in the table above. Grades: A 91–100 · B 81–90 · C 71–80 · D 61–70 · F ≤60.</div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <div class="logo-lock">
+      <img class="logomark" src="data:image/png;base64,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" width="72" height="83" alt="The FixOurStreets216 Project logomark">
+      <div class="wordmark">The FixOurStreets216 Project</div>
+    </div>
+    <div class="foot-meta">
+      FOS216-PMS-001 · REV A · 2026-08-06 · Cleveland Pavement Management Study<br>
+      Source: City of Cleveland 2025 PCR Condition File · fixourstreets216.com
+    </div>
+    <div class="disclaimer">FOR PLANNING &amp; DISCUSSION — NOT A CONSTRUCTION OR BID DOCUMENT. Unit costs are user-adjustable planning assumptions.</div>
+  </footer>
+
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const DATA = {"meta":{"total_segments":17416,"total_sqyd":20404815.9,"total_miles":1264.3,"mean_pcr":57.7,"condition_year":2025},"grades":{"A":{"segments":898,"sqyd":1068686.3,"miles":74.2,"mean_pcr":96.0},"B":{"segments":2133,"sqyd":2622420.9,"miles":160.6,"mean_pcr":84.8},"C":{"segments":2366,"sqyd":3002502.6,"miles":166.5,"mean_pcr":76.4},"D":{"segments":2515,"sqyd":3072541.8,"miles":167.9,"mean_pcr":66.0},"F":{"segments":9504,"sqyd":10638664.4,"miles":695.1,"mean_pcr":41.2}},"wards":[{"ward":1,"segments":819,"sqyd":1162105.8,"mean_pcr":56.4,"A":65907.0,"B":106978.3,"C":216314.0,"D":147398.8,"F":625507.7},{"ward":2,"segments":1183,"sqyd":1347488.0,"mean_pcr":58.7,"A":64837.1,"B":192117.9,"C":237059.3,"D":196248.5,"F":657225.2},{"ward":3,"segments":1262,"sqyd":1419808.8,"mean_pcr":58.2,"A":67150.5,"B":228237.9,"C":290650.8,"D":183694.4,"F":650075.1},{"ward":4,"segments":795,"sqyd":1076822.7,"mean_pcr":56.2,"A":66758.0,"B":128719.4,"C":75253.1,"D":217249.9,"F":588842.3},{"ward":5,"segments":1490,"sqyd":1729503.1,"mean_pcr":58.9,"A":88367.8,"B":142975.8,"C":227365.9,"D":320274.7,"F":950519.0},{"ward":6,"segments":1268,"sqyd":1450734.7,"mean_pcr":59.2,"A":60325.1,"B":190664.2,"C":232342.5,"D":259322.8,"F":708080.1},{"ward":7,"segments":1658,"sqyd":1523763.5,"mean_pcr":58.7,"A":101085.0,"B":238045.5,"C":247661.8,"D":173413.4,"F":763557.8},{"ward":8,"segments":1762,"sqyd":2141980.0,"mean_pcr":53.6,"A":75102.9,"B":271274.7,"C":220926.0,"D":303974.3,"F":1270702.0},{"ward":9,"segments":1321,"sqyd":1437286.8,"mean_pcr":57.3,"A":93981.6,"B":138427.6,"C":233708.3,"D":202684.1,"F":768485.4},{"ward":10,"segments":1115,"sqyd":1380897.6,"mean_pcr":61.5,"A":127250.8,"B":261549.5,"C":143321.1,"D":172940.1,"F":675836.2},{"ward":11,"segments":889,"sqyd":1020121.1,"mean_pcr":57.0,"A":37327.0,"B":136950.5,"C":132523.8,"D":173536.1,"F":539783.6},{"ward":12,"segments":638,"sqyd":926316.5,"mean_pcr":62.1,"A":37347.9,"B":118777.5,"C":153973.4,"D":171362.0,"F":444855.8},{"ward":13,"segments":964,"sqyd":1279137.4,"mean_pcr":57.4,"A":66970.5,"B":106607.1,"C":241456.7,"D":180683.9,"F":683419.2},{"ward":14,"segments":1172,"sqyd":1026835.4,"mean_pcr":54.7,"A":44518.9,"B":171542.4,"C":133725.9,"D":116116.2,"F":560931.9},{"ward":15,"segments":955,"sqyd":1332728.1,"mean_pcr":57.6,"A":46326.1,"B":160620.4,"C":200606.0,"D":236840.8,"F":688334.7}]};
+
+const GC = {A:'#19C3B2',B:'#4fb87a',C:'#e0b53a',D:'#E1560F',F:'#c53a2e'};
+const PCR_MID = {A:96,B:85,C:76,D:66,F:41,NEW:97}; // representative PCR per grade
+const avgSegArea = DATA.meta.total_sqyd / DATA.meta.total_segments;
+
+/* ===================== FORMATTERS ===================== */
+const fmt = n => n.toLocaleString('en-US',{maximumFractionDigits:0});
+const fM  = n => '$'+(n/1e6).toLocaleString('en-US',{maximumFractionDigits:1})+'M';
+const fB  = n => '$'+(n/1e9).toLocaleString('en-US',{maximumFractionDigits:2})+'B';
+const fMoney = n => n>=1e9?fB(n):fM(n);
+
+/* ===================== SNAPSHOT + LEDGER ===================== */
+function fillSnapshot(){
+  document.getElementById('tb-seg').textContent = fmt(DATA.meta.total_segments)+' segments';
+  document.getElementById('k-seg').textContent = fmt(DATA.meta.total_segments);
+  document.getElementById('k-pcr').textContent = DATA.meta.mean_pcr.toFixed(1);
+  document.getElementById('k-sqyd').textContent = (DATA.meta.total_sqyd/1e6).toFixed(1)+'M';
+  const fpct = DATA.grades.F.segments/DATA.meta.total_segments*100;
+  document.getElementById('k-fpct').textContent = fpct.toFixed(0)+'%';
+
+  const tb = document.getElementById('grade-table'); let rows='';
+  const bands={A:'91–100',B:'81–90',C:'71–80',D:'61–70',F:'≤60'};
+  ['A','B','C','D','F'].forEach(g=>{
+    const d=DATA.grades[g];
+    rows+=`<tr><td><span class="gradechip g${g}">${g}</span></td><td class="mono">${bands[g]}</td>
+      <td class="r">${fmt(d.segments)}</td><td class="r">${fmt(d.sqyd)}</td><td class="r">${d.miles.toFixed(0)}</td></tr>`;
+  });
+  tb.innerHTML=rows;
+  const df = DATA.grades.D.sqyd+DATA.grades.F.sqyd;
+  document.getElementById('grade-callout').innerHTML =
+    `<b>${(DATA.grades.F.segments/DATA.meta.total_segments*100).toFixed(0)}% of segments are failed (F)</b> and another ${(DATA.grades.D.segments/DATA.meta.total_segments*100).toFixed(0)}% are poor (D). Together, D+F pavement covers <b>${fmt(df)} SY</b> — the core rehabilitation backlog this program has to work through.`;
+}
+
+/* ===================== DONUT ===================== */
+function donut(){
+  const order=['A','B','C','D','F'];
+  const total=order.reduce((s,g)=>s+DATA.grades[g].sqyd,0);
+  const cx=110,cy=110,r=82,rin=48; let ang=-Math.PI/2, paths='';
+  order.forEach(g=>{
+    const frac=DATA.grades[g].sqyd/total, a2=ang+frac*2*Math.PI;
+    const x1=cx+r*Math.cos(ang),y1=cy+r*Math.sin(ang),x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+    const xi1=cx+rin*Math.cos(a2),yi1=cy+rin*Math.sin(a2),xi2=cx+rin*Math.cos(ang),yi2=cy+rin*Math.sin(ang);
+    const large=frac>0.5?1:0;
+    paths+=`<path d="M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2} L${xi1} ${yi1} A${rin} ${rin} 0 ${large} 0 ${xi2} ${yi2} Z" fill="${GC[g]}" stroke="#161d22" stroke-width="1.5"/>`;
+    ang=a2;
+  });
+  document.getElementById('donut').innerHTML=
+    `<svg viewBox="0 0 220 220" style="max-width:260px;margin:0 auto">${paths}
+     <text x="110" y="104" text-anchor="middle" font-family="JetBrains Mono" font-size="26" font-weight="700" fill="#fff">${DATA.meta.mean_pcr.toFixed(0)}</text>
+     <text x="110" y="122" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#8ea3ad">MEAN PCR</text></svg>`;
+  let lg='';order.forEach(g=>{const p=(DATA.grades[g].sqyd/total*100).toFixed(0);
+    lg+=`<span><i class="sw" style="background:${GC[g]}"></i>${g} · ${p}%</span>`;});
+  document.getElementById('donut-legend').innerHTML=lg;
+}
+
+/* ===================== SIMULATION ENGINE ===================== */
+function getParams(){
+  return {
+    repave:+document.getElementById('s-repave').value,
+    sawcut:+document.getElementById('s-sawcut').value,
+    ir:+document.getElementById('s-ir').value,
+    irpct:+document.getElementById('s-irpct').value/100,
+    budget:+document.getElementById('s-budget').value*1e6,
+    det:+document.getElementById('s-det').value/100,
+    years:10, targetYears:+document.getElementById('s-target').value,
+    alRecon:+document.getElementById('s-alRecon').value,
+    alRepave:+document.getElementById('s-alRepave').value,
+    alPrev:+document.getElementById('s-alPrev').value,
+    horizon:HORIZON,
+    mode:document.getElementById('mode-target').classList.contains('active')?'target':'budget'
+  };
+}
+
+// core: run program given an annual budget. Returns per-year ledger + trajectory.
+function simulate(p, annualBudget, start){
+  // state = SY per grade (citywide unless a ward start state is passed)
+  let st=start?{A:start.A,B:start.B,C:start.C,D:start.D,F:start.F}:{A:DATA.grades.A.sqyd,B:DATA.grades.B.sqyd,C:DATA.grades.C.sqyd,D:DATA.grades.D.sqyd,F:DATA.grades.F.sqyd};
+  const irCost = p.ir*p.irpct;           // $/SY effective for infrared
+  const ledger=[];
+  const meanPCR = s=>{
+    const tot=s.A+s.B+s.C+s.D+s.F;
+    return (s.A*PCR_MID.A+s.B*PCR_MID.B+s.C*PCR_MID.C+s.D*PCR_MID.D+s.F*PCR_MID.F)/tot;
+  };
+  for(let y=0;y<p.years;y++){
+    let recon=0,repave=0,irC=0,irB=0,protC=0,protB=0;
+    if(p.reconFirst){
+      // reconstruction-first: F, then spill to D, then preventive
+      let b=annualBudget, can;
+      can=b/p.sawcut; recon=Math.min(st.F,can); b-=recon*p.sawcut; st.F-=recon; st.A+=recon;
+      can=b/p.repave; repave=Math.min(st.D,can); b-=repave*p.repave; st.D-=repave; st.A+=repave;
+      if(irCost>0){ can=b/irCost; irC=Math.min(st.C,can); b-=irC*irCost;
+                    can=b/irCost; irB=Math.min(st.B,can); b-=irB*irCost; }
+    } else {
+      const tot=Math.max(1,p.alRecon+p.alRepave+p.alPrev);
+      let bR=annualBudget*p.alRecon/tot, bP=annualBudget*p.alRepave/tot, bV=annualBudget*p.alPrev/tot, can;
+      can=bR/p.sawcut; recon=Math.min(st.F,can); let leftR=bR-recon*p.sawcut; st.F-=recon; st.A+=recon;
+      can=bP/p.repave; repave=Math.min(st.D,can); let leftP=bP-repave*p.repave; st.D-=repave; st.A+=repave;
+      let leftV=bV;
+      if(irCost>0){ can=leftV/irCost; irC=Math.min(st.C,can); leftV-=irC*irCost;
+                    can=leftV/irCost; irB=Math.min(st.B,can); leftV-=irB*irCost; }
+      // spillover: any unspent track money flows to reconstruction, then repave
+      let spill=leftR+leftP+leftV;
+      if(spill>0 && st.F>0){ can=spill/p.sawcut; let add=Math.min(st.F,can); spill-=add*p.sawcut; st.F-=add; st.A+=add; recon+=add; }
+      if(spill>0 && st.D>0){ can=spill/p.repave; let add=Math.min(st.D,can); spill-=add*p.repave; st.D-=add; st.A+=add; repave+=add; }
+    }
+    protC=irC; protB=irB;
+    const spent=recon*p.sawcut+repave*p.repave+(irC+irB)*irCost;
+    const treatedSY=recon+repave+irC+irB;
+    const segs=treatedSY/avgSegArea;
+    ledger.push({y:2026+y,spent,recon,repave,ir:irC+irB,irC,irB,
+      segs, backlogF:st.F, pcr:0});
+    // deterioration on untreated / unprotected area
+    const dropA=st.A*p.det;
+    const dropB=Math.max(0,(st.B-protB))*p.det;
+    const dropC=Math.max(0,(st.C-protC))*p.det;
+    const dropD=st.D*p.det;
+    st.A-=dropA; st.B+=dropA;
+    st.B-=dropB; st.C+=dropB;
+    st.C-=dropC; st.D+=dropC;
+    st.D-=dropD; st.F+=dropD;
+    ledger[y].pcr=meanPCR(st);
+    ledger[y].state={...st};
+  }
+  return ledger;
+}
+
+// do-nothing baseline for comparison
+function baseline(p){
+  let st={A:DATA.grades.A.sqyd,B:DATA.grades.B.sqyd,C:DATA.grades.C.sqyd,D:DATA.grades.D.sqyd,F:DATA.grades.F.sqyd};
+  const out=[];const meanPCR=s=>{const t=s.A+s.B+s.C+s.D+s.F;return (s.A*PCR_MID.A+s.B*PCR_MID.B+s.C*PCR_MID.C+s.D*PCR_MID.D+s.F*PCR_MID.F)/t;};
+  for(let y=0;y<p.years;y++){
+    const dA=st.A*p.det,dB=st.B*p.det,dC=st.C*p.det,dD=st.D*p.det;
+    st.A-=dA;st.B+=dA; st.B-=dB;st.C+=dB; st.C-=dC;st.D+=dC; st.D-=dD;st.F+=dD;
+    out.push(meanPCR(st));
+  }
+  return out;
+}
+
+// solve required annual budget to clear F within N years (bisection)
+function solveTargetBudget(p){
+  let lo=0, hi=2e9;
+  for(let i=0;i<40;i++){
+    const mid=(lo+hi)/2;
+    const led=simulate({...p,years:p.targetYears,reconFirst:true}, mid);
+    const cleared = led[p.targetYears-1].backlogF <= 1000;
+    if(cleared) hi=mid; else lo=mid;
+  }
+  return hi;
+}
+
+/* ===================== RENDER MODEL ===================== */
+let lastLedger=null;
+function render(){
+  const p=getParams();
+  {const _hz=p.horizon,_end=2025+p.horizon;["hz-sub","hz-h1","hz-h2"].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=_hz;});const _e=document.getElementById("hz-endyr");if(_e)_e.textContent=_end;}
+  let annualBudget, reconFirst;
+  if(p.mode==='target'){ annualBudget=solveTargetBudget({...p,targetYears:p.horizon}); reconFirst=true; }
+  else { annualBudget=p.budget; reconFirst=false; }
+  const led=simulate({...p,years:p.horizon,reconFirst}, annualBudget);
+  lastLedger=led;
+  window._annualBudget=annualBudget;
+  const base=baseline({...p,years:p.horizon});
+
+  // ---- readouts ----
+  const y1=led[0];
+  const repaveSYy1=y1.repave, reconSYy1=y1.recon;
+  const repaveSegY1=repaveSYy1/avgSegArea, reconSegY1=reconSYy1/avgSegArea;
+  // lane-miles: SY -> centerline? use total miles/total sqyd ratio
+  const miPerSY = DATA.meta.total_miles/DATA.meta.total_sqyd;
+  const yearsToClearF = (()=>{for(let i=0;i<led.length;i++) if(led[i].backlogF<=1000) return i+1; return null;})();
+  const total10 = led.reduce((s,r)=>s+r.spent,0);
+  const finalPCR = led[led.length-1].pcr;
+
+  const ro=document.getElementById('readouts');
+  ro.innerHTML=`
+    <div class="ro"><div class="n">${fMoney(annualBudget)}</div><div class="l">Annual budget ${p.mode==='target'?'(solved)':'(set)'}</div></div>
+    <div class="ro"><div class="n">${fmt(repaveSYy1)}</div><div class="l">SY repaved · Year 1 (Grade D)</div></div>
+    <div class="ro"><div class="n">${fmt(repaveSegY1)}</div><div class="l">≈ streets repaved · Year 1</div></div>
+    <div class="ro"><div class="n">${fmt(reconSYy1)}</div><div class="l">SY reconstructed · Year 1 (Grade F)</div></div>
+    <div class="ro"><div class="n">${(reconSYy1*miPerSY).toFixed(1)}</div><div class="l">Lane-mi reconstructed · Year 1</div></div>
+    <div class="ro"><div class="n">${yearsToClearF? yearsToClearF+' yrs':'>'+led.length+' yrs'}</div><div class="l">To clear the F backlog</div></div>
+    <div class="ro"><div class="n">${fMoney(total10)}</div><div class="l">${led.length}-year total investment</div></div>
+    <div class="ro"><div class="n">${finalPCR.toFixed(1)}</div><div class="l">Projected ${2025+led.length} PCR</div></div>`;
+
+  // full-backlog cost note
+  const fullRecon=DATA.grades.F.sqyd*p.sawcut, fullRepave=DATA.grades.D.sqyd*p.repave;
+  const fullIR=(DATA.grades.A.sqyd+DATA.grades.B.sqyd+DATA.grades.C.sqyd)*p.ir*p.irpct;
+  document.getElementById('model-note').innerHTML=
+    `Full one-time backlog at current rates → reconstruct all F: <b>${fMoney(fullRecon)}</b> · repave all D: <b>${fMoney(fullRepave)}</b> · infrared all A/B/C: <b>${fMoney(fullIR)}</b> · grand total <b>${fMoney(fullRecon+fullRepave+fullIR)}</b>.`
+    + (p.mode==='target'?`  &nbsp;»  To clear F in ${p.targetYears} yrs you must fund ≈ ${fMoney(annualBudget)}/yr.`:'');
+
+  drawStack(led);
+  drawPlanTable(led);
+  drawPCRLine(led,base);
+  drawMix(led);
+  if(typeof drawPlanner==='function') drawPlanner();
+}
+
+/* ===================== STACK CHART (annual $ by method) ===================== */
+function drawStack(led){
+  const W=760,H=300,ml=54,mr=14,mt=14,mb=40, pw=(W-ml-mr)/led.length*0.62, gap=(W-ml-mr)/led.length;
+  const maxV=Math.max(...led.map(r=>r.recon*_rates.sawcut+r.repave*_rates.repave+(r.irC+r.irB)*_rates.ir*_rates.irpct),1);
+  const yS=v=>H-mb-(v/maxV)*(H-mt-mb);
+  let bars='',ax='';
+  // y gridlines
+  for(let i=0;i<=4;i++){const v=maxV*i/4,y=yS(v);
+    ax+=`<line class="gridline" x1="${ml}" y1="${y}" x2="${W-mr}" y2="${y}"/>
+    <text class="axislbl" x="${ml-6}" y="${y+3}" text-anchor="end">$${(v/1e6).toFixed(0)}M</text>`;}
+  led.forEach((r,i)=>{
+    const x=ml+gap*i+(gap-pw)/2; let yb=H-mb;
+    const parts=[[r.recon*_rates.sawcut,GC.F],[r.repave*_rates.repave,GC.D],
+                 [r.irC*_rates.ir*_rates.irpct,GC.C],[r.irB*_rates.ir*_rates.irpct,GC.B]];
+    parts.forEach(([val,col])=>{const h=(val/maxV)*(H-mt-mb); if(h>0){bars+=`<rect x="${x}" y="${yb-h}" width="${pw}" height="${h}" fill="${col}"/>`; yb-=h;}});
+    if(led.length<=14||i%3===0||i===led.length-1) ax+=`<text class="axislbl" x="${x+pw/2}" y="${H-mb+16}" text-anchor="middle">'${String(r.y).slice(2)}</text>`;
+  });
+  document.getElementById('stackchart').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${ax}${bars}</svg>`;
+}
+let _rates={};
+
+/* ===================== PLAN TABLE ===================== */
+function drawPlanTable(led){
+  const miPerSY=DATA.meta.total_miles/DATA.meta.total_sqyd;
+  let rows='';
+  led.forEach(r=>{
+    rows+=`<tr>
+      <td class="mono">FY${r.y}</td>
+      <td class="r">${fMoney(r.spent)}</td>
+      <td class="r">${fmt(r.recon)}</td>
+      <td class="r">${fmt(r.repave)}</td>
+      <td class="r">${fmt(r.ir)}</td>
+      <td class="r">${fmt(r.segs)}</td>
+      <td class="r">${((r.recon+r.repave)*miPerSY).toFixed(1)}</td>
+      <td class="r">${fmt(r.backlogF)}</td>
+      <td class="r" style="color:${r.pcr>=70?'#19C3B2':r.pcr>=60?'#e0b53a':'#E1560F'}">${r.pcr.toFixed(1)}</td>
+    </tr>`;
+  });
+  document.getElementById('plan-table').innerHTML=rows;
+}
+
+/* ===================== PCR LINE ===================== */
+function drawPCRLine(led,base){
+  const W=520,H=280,ml=44,mr=16,mt=16,mb=34;
+  const yrs=led.map(r=>r.y), minY=58, maxY=Math.max(75,...led.map(r=>r.pcr))+2;
+  const xS=i=>ml+(W-ml-mr)*i/(led.length-1);
+  const yS=v=>H-mb-((v-minY)/(maxY-minY))*(H-mt-mb);
+  let ax='';
+  for(let i=0;i<=4;i++){const v=minY+(maxY-minY)*i/4,y=yS(v);
+    ax+=`<line class="gridline" x1="${ml}" y1="${y}" x2="${W-mr}" y2="${y}"/>
+    <text class="axislbl" x="${ml-6}" y="${y+3}" text-anchor="end">${v.toFixed(0)}</text>`;}
+  led.forEach((r,i)=>{ if(led.length<=14||i%3===0||i===led.length-1) ax+=`<text class="axislbl" x="${xS(i)}" y="${H-mb+15}" text-anchor="middle">'${String(r.y).slice(2)}</text>`; });
+  // target line 70
+  const yt=yS(70);
+  ax+=`<line x1="${ml}" y1="${yt}" x2="${W-mr}" y2="${yt}" stroke="#FF6A1A" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  const line=(arr,col,w)=>{let d=arr.map((v,i)=>`${i?'L':'M'}${xS(i)} ${yS(v)}`).join(' ');
+    let dots=arr.map((v,i)=>`<circle cx="${xS(i)}" cy="${yS(v)}" r="2.6" fill="${col}"/>`).join('');
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}"/>${dots}`;}
+  document.getElementById('pcrline').innerHTML=
+    `<svg viewBox="0 0 ${W} ${H}">${ax}${line(base,'#6b7d87',2)}${line(led.map(r=>r.pcr),'#19C3B2',2.6)}</svg>`;
+}
+
+/* ===================== GRADE MIX (stacked area) ===================== */
+function drawMix(led){
+  const W=520,H=280,ml=44,mr=16,mt=16,mb=34;
+  const start={A:DATA.grades.A.sqyd,B:DATA.grades.B.sqyd,C:DATA.grades.C.sqyd,D:DATA.grades.D.sqyd,F:DATA.grades.F.sqyd};
+  const states=[start,...led.map(r=>r.state)];
+  const tot=DATA.meta.total_sqyd;
+  const n=states.length;
+  const xS=i=>ml+(W-ml-mr)*i/(n-1);
+  const yS=v=>H-mb-v*(H-mt-mb); // v is fraction 0..1
+  const order=['F','D','C','B','A']; // bottom to top
+  let areas='';
+  // build cumulative
+  const cum=states.map(s=>{let acc=0;const o={};order.forEach(g=>{o[g+'0']=acc;acc+=s[g]/tot;o[g+'1']=acc;});return o;});
+  order.forEach(g=>{
+    let top=cum.map((c,i)=>`${i?'L':'M'}${xS(i)} ${yS(c[g+'1'])}`).join(' ');
+    let bot=cum.map((c,i)=>`L${xS(n-1-i)} ${yS(cum[n-1-i][g+'0'])}`).join(' ');
+    areas+=`<path d="${top} ${bot} Z" fill="${GC[g]}" opacity="0.9"/>`;
+  });
+  let ax='';
+  for(let i=0;i<=4;i++){const f=i/4,y=yS(f);ax+=`<text class="axislbl" x="${ml-6}" y="${y+3}" text-anchor="end">${(f*100).toFixed(0)}%</text>`;}
+  const _n=led.length,_step=_n<=12?2:Math.ceil(_n/6),_ti=[]; for(let i=0;i<_n;i+=_step)_ti.push(i); if(_ti[_ti.length-1]!==_n-1)_ti.push(_n-1);
+  _ti.forEach(i=>ax+=`<text class="axislbl" x="${xS(i+1)}" y="${H-mb+15}" text-anchor="middle">'${String(2026+i).slice(2)}</text>`);
+  document.getElementById('mixchart').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${areas}${ax}</svg>`;
+}
+
+/* ===================== WARD BUDGET PLANNER ===================== */
+const PL_WARDS = DATA.wards.filter(w=>w.ward>=1 && w.ward<=15);
+let PL_REPEAT = 'once';
+function plMoney(n){ return n<1e6 ? '$'+Math.round(n/1000).toLocaleString('en-US')+'K' : fMoney(n); }
+function plGrade(v){ return v>=91?'A':v>=81?'B':v>=71?'C':v>=61?'D':'F'; }
+function plMid(s){ const t=s.A+s.B+s.C+s.D+s.F; return (s.A*PCR_MID.A+s.B*PCR_MID.B+s.C*PCR_MID.C+s.D*PCR_MID.D+s.F*PCR_MID.F)/t; }
+function plNeed(w,p){ return w.F*p.sawcut + w.D*p.repave + (w.C+w.B)*p.ir*p.irpct; }
+function plRun(start, budgets, pp){
+  let st={...start}; const out=[];
+  budgets.forEach((b,i)=>{ const l=simulate({...pp,years:1}, b, st)[0]; out.push({y:2026+i, pcr:l.pcr, F:l.state.F, recon:l.recon, repave:l.repave, spent:l.spent}); st=l.state; });
+  return out;
+}
+function drawPlanner(){
+  const sel=document.getElementById('pl-ward'); if(!sel) return;
+  if(!sel.options.length){
+    PL_WARDS.map(w=>w.ward).sort((a,b)=>a-b).forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent='Ward '+n; sel.appendChild(o); });
+    sel.value = 8;
+  }
+  const p=getParams();
+  const city = window._annualBudget || p.budget;
+  const rows = PL_WARDS.map(w=>({w, need:plNeed(w,p)}));
+  const totNeed = rows.reduce((s,r)=>s+r.need,0);
+  rows.forEach(r=>{ r.share=r.need/totNeed; r.base=city*r.share; });
+  const wn=+sel.value, r=rows.find(x=>x.w.ward===wn), w=r.w;
+  const cas=Math.max(0, +document.getElementById('pl-casino').value || 0);
+  const start={A:w.A,B:w.B,C:w.C,D:w.D,F:w.F};
+  const off = w.mean_pcr - plMid(start);
+  const pp={...p, reconFirst: p.mode==='target'};
+  const N=5;
+  const bNone=Array(N).fill(0), bBase=Array(N).fill(r.base);
+  const bCas=bBase.map((b,i)=> b + (PL_REPEAT==='every' || i===0 ? cas : 0));
+  const none=plRun(start,bNone,pp), base=plRun(start,bBase,pp), withC=plRun(start,bCas,pp);
+  const P=v=>v+off;
+  const b1=P(base[0].pcr), c1=P(withC[0].pcr), d=c1-b1;
+  const gCol=g=>({A:'var(--gA)',B:'var(--gB)',C:'var(--gC)',D:'var(--gD)',F:'var(--gF)'}[g]);
+  const fCleared = withC[0].recon - base[0].recon;
+  document.getElementById('pl-kpis').innerHTML = `
+    <div class="kpi"><div class="num">${(r.share*100).toFixed(1)}%</div><div class="cap">Ward ${wn} share of SRF program (worst-to-best rank ${[...rows].sort((a,b)=>b.share-a.share).findIndex(x=>x.w.ward===wn)+1} of 15)</div></div>
+    <div class="kpi"><div class="num">${fMoney(r.base)}</div><div class="cap">SRF allocation · 2026</div></div>
+    <div class="kpi orange"><div class="num">${plMoney(cas)}</div><div class="cap">Casino funds added ${PL_REPEAT==='every'?'each year':'in 2026'}</div></div>
+    <div class="kpi orange"><div class="num">${fMoney(r.base+cas)}</div><div class="cap">Total ward repair budget · 2026</div></div>
+    <div class="kpi"><div class="num">${w.mean_pcr.toFixed(1)} <span style="font-size:16px;color:${gCol(plGrade(w.mean_pcr))}">${plGrade(w.mean_pcr)}</span></div><div class="cap">2025 mean PCR (actual)</div></div>
+    <div class="kpi"><div class="num">${b1.toFixed(1)} <span style="font-size:16px;color:${gCol(plGrade(b1))}">${plGrade(b1)}</span></div><div class="cap">2026 year-end PCR · SRF only</div></div>
+    <div class="kpi red"><div class="num">${c1.toFixed(1)} <span style="font-size:16px;color:${gCol(plGrade(c1))}">${plGrade(c1)}</span></div><div class="cap">2026 year-end PCR · SRF + Casino (${d>=0?'+':''}${d.toFixed(2)} pts)</div></div>
+    <div class="kpi"><div class="num">${fmt(fCleared)}</div><div class="cap">Extra SY of Grade F rebuilt by Casino funds · 2026${cas>0&&d>0.005?` · ≈ ${fMoney(cas/d)} per PCR point`:''}</div></div>`;
+  document.getElementById('pl-outlook').innerHTML = base.map((b,i)=>`<tr>
+      <td class="mono">${b.y}</td>
+      <td class="r" style="color:var(--muted)">${P(none[i].pcr).toFixed(1)}</td>
+      <td class="r">${P(b.pcr).toFixed(1)} ${plGrade(P(b.pcr))}</td>
+      <td class="r" style="color:#fff;font-weight:700">${P(withC[i].pcr).toFixed(1)} ${plGrade(P(withC[i].pcr))}</td>
+      <td class="r" style="color:#e88">${fmt(withC[i].F)}</td></tr>`).join('');
+  document.getElementById('pl-alloc').innerHTML = [...rows].sort((a,b)=>b.share-a.share).map(x=>`<tr data-ward="${x.w.ward}" style="${x.w.ward===wn?'background:rgba(25,195,178,.14)':''}">
+      <td class="mono">W${x.w.ward}</td><td class="r">${x.w.mean_pcr.toFixed(1)}</td>
+      <td class="r">${fMoney(x.need)}</td><td class="r">${(x.share*100).toFixed(1)}%</td>
+      <td class="r">${fMoney(x.base)}</td></tr>`).join('') +
+    `<tr style="border-top:2px solid var(--line);font-weight:700;color:#fff"><td class="mono">15 wards</td><td></td><td class="r">${fMoney(totNeed)}</td><td class="r">100%</td><td class="r">${fMoney(city)}</td></tr>`;
+  document.querySelectorAll('#pl-alloc tr[data-ward]').forEach(tr=>tr.onclick=()=>{ sel.value=tr.dataset.ward; drawPlanner(); });
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const sel=document.getElementById('pl-ward'); if(!sel) return;
+  sel.addEventListener('change',drawPlanner);
+  document.getElementById('pl-casino').addEventListener('input',drawPlanner);
+  document.querySelectorAll('.pl-rep').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.pl-rep').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    PL_REPEAT=b.dataset.rep; drawPlanner(); }));
+  drawPlanner();
+});
+
+/* ===================== WARD TABLE ===================== */
+function drawWards(){
+  const p=getParams();
+  const rows=[...DATA.wards].sort((a,b)=>b.F-a.F).map(w=>{
+    const reconCost=w.F*p.sawcut;
+    return `<tr class="wardrow" data-ward="${w.ward}" style="cursor:pointer">
+      <td class="mono">W${w.ward}</td>
+      <td class="r">${fmt(w.segments)}</td>
+      <td class="r" style="color:${w.mean_pcr>=61?'#e0b53a':'#E1560F'}">${w.mean_pcr.toFixed(1)}</td>
+      <td class="r">${fmt(w.A)}</td><td class="r">${fmt(w.B)}</td><td class="r">${fmt(w.C)}</td>
+      <td class="r">${fmt(w.D)}</td><td class="r" style="color:#e88">${fmt(w.F)}</td>
+      <td class="r">${fMoney(reconCost)}</td></tr>`;
+  }).join('');
+  document.getElementById('ward-table').innerHTML=rows;
+  /* grade totals (all wards) + share of area + citywide */
+  const G=['A','B','C','D','F'];
+  const tot={segments:0,sqyd:0,pcrw:0}; G.forEach(g=>tot[g]=0);
+  DATA.wards.forEach(w=>{tot.segments+=w.segments;tot.sqyd+=w.sqyd;tot.pcrw+=w.mean_pcr*w.sqyd;G.forEach(g=>tot[g]+=w[g]);});
+  const gsum=G.reduce((s,g)=>s+tot[g],0), wmean=tot.pcrw/tot.sqyd;
+  const cw=DATA.grades, cwSeg=DATA.meta.total_segments;
+  const ts='style="border-top:2px solid var(--line);font-weight:700;color:#fff"';
+  document.getElementById('ward-foot').innerHTML=
+   `<tr ${ts}><td class="mono" style="font-weight:700">Ward total</td>
+     <td class="r">${fmt(tot.segments)}</td>
+     <td class="r" style="color:${wmean>=61?'#e0b53a':'#E1560F'}">${wmean.toFixed(1)}</td>
+     ${G.map(g=>`<td class="r"${g==='F'?' style="color:#e88"':''}>${fmt(tot[g])}</td>`).join('')}
+     <td class="r">${fMoney(tot.F*p.sawcut)}</td></tr>
+    <tr style="color:var(--muted,#8b9ea8)"><td class="mono">% of area</td><td></td><td></td>
+     ${G.map(g=>`<td class="r">${(tot[g]/gsum*100).toFixed(1)}%</td>`).join('')}<td></td></tr>
+    <tr style="color:var(--muted,#8b9ea8)"><td class="mono">Citywide*</td>
+     <td class="r">${fmt(cwSeg)}</td><td class="r">${DATA.meta.mean_pcr.toFixed(1)}</td>
+     ${G.map(g=>`<td class="r">${fmt(cw[g].sqyd)}</td>`).join('')}
+     <td class="r">${fMoney(cw.F.sqyd*p.sawcut)}</td></tr>`;
+  document.querySelectorAll('#ward-table .wardrow').forEach(tr=>tr.addEventListener('click',()=>{
+    const wn=+tr.dataset.ward; const fr=document.getElementById('ward8-frame');
+    if(fr&&fr.contentWindow) fr.contentWindow.postMessage({type:"selectWard",ward:wn},"*");
+    highlightWardRow(wn);
+    fr&&fr.scrollIntoView&&fr.scrollIntoView({behavior:"smooth",block:"center"});
+  }));
+}
+function highlightWardRow(wn){
+  document.querySelectorAll('#ward-table .wardrow').forEach(r=>{
+    r.style.background = (+r.dataset.ward===wn)?'rgba(25,195,178,.14)':'';
+  });
+  const pl=document.getElementById('pl-ward');
+  if(pl && wn>=1 && wn<=15 && +pl.value!==wn){ pl.value=wn; drawPlanner(); }
+}
+// map -> table: when a ward is picked on the map, highlight its row
+window.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='wardSelect'&&e.data.ward){
+    highlightWardRow(e.data.ward);
+    const tr=document.querySelector('#ward-table .wardrow[data-ward="'+e.data.ward+'"]');
+    if(tr&&tr.scrollIntoView) tr.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+});
+
+/* ===================== WIRE UP ===================== */
+function syncRatesAndRender(){
+  const p=getParams();
+  _rates={sawcut:p.sawcut,repave:p.repave,ir:p.ir,irpct:p.irpct};
+  document.getElementById('v-repave').textContent=p.repave;
+  document.getElementById('v-sawcut').textContent=p.sawcut;
+  document.getElementById('v-ir').textContent=p.ir;
+  document.getElementById('v-irpct').textContent=(p.irpct*100).toFixed(0);
+  document.getElementById('v-budget').textContent=(p.budget/1e6).toFixed(0);
+  document.getElementById('v-target').textContent=p.targetYears;
+  document.getElementById('v-det').textContent=(p.det*100).toFixed(0);
+  document.getElementById('v-alRecon').textContent=p.alRecon;
+  document.getElementById('v-alRepave').textContent=p.alRepave;
+  document.getElementById('v-alPrev').textContent=p.alPrev;
+  render();
+  drawWards();
+}
+['s-repave','s-sawcut','s-ir','s-irpct','s-budget','s-target','s-det','s-alRecon','s-alRepave','s-alPrev'].forEach(id=>
+  document.getElementById(id).addEventListener('input',syncRatesAndRender));
+
+let HORIZON=10;
+document.querySelectorAll('.modebtn.hz').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.modebtn.hz').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); HORIZON=+b.dataset.hz; syncRatesAndRender();
+}));
+document.getElementById('mode-budget').addEventListener('click',()=>{
+  document.getElementById('mode-budget').classList.add('active');
+  document.getElementById('mode-target').classList.remove('active');
+  document.getElementById('wrap-budget').style.display='';
+  document.getElementById('wrap-target').style.display='none';
+  document.getElementById('alloc-block').style.display='';
+  document.getElementById('hz-label').textContent='HORIZON';
+  syncRatesAndRender();
+});
+document.getElementById('mode-target').addEventListener('click',()=>{
+  document.getElementById('mode-target').classList.add('active');
+  document.getElementById('mode-budget').classList.remove('active');
+  document.getElementById('wrap-budget').style.display='none';
+  document.getElementById('wrap-target').style.display='none';
+  document.getElementById('alloc-block').style.display='none';
+  document.getElementById('hz-label').textContent='CLEAR F IN';
+  syncRatesAndRender();
+});
+
+/* ===================== INIT ===================== */
+fillSnapshot();
+donut();
+syncRatesAndRender();
+</script>
+<script>
+const WARD8_MAP_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Cleveland Ward Pavement Condition \u00b7 The FixOurStreets216 Project<\/title>\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css\">\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js\"><\/script>\n<style>\n  :root{\n    --ink:#0a1422;            /* deep grid-night blue */\n    --ink-2:#101e31;\n    --panel:#0e1a2bf2;\n    --line:#2c4159;\n    --line-soft:#1c2d42;\n    --text:#e9eff7;\n    --text-dim:#8fa3bb;\n    --amp:#ffb52e;            /* energized amber */\n    --amp-deep:#d98f0e;\n    --ok:#5ad1a5;\n    --display:\"Bahnschrift\",\"Avenir Next Condensed\",\"Helvetica Neue Condensed\",\"Arial Narrow\",Arial,sans-serif;\n    --body:\"Segoe UI\",\"Avenir Next\",\"Helvetica Neue\",Arial,sans-serif;\n    --mono:\"Consolas\",\"SF Mono\",\"Menlo\",monospace;\n  }\n  *{box-sizing:border-box;margin:0;padding:0}\n  html,body{height:100%;background:var(--ink);color:var(--text);font-family:var(--body);overflow:hidden}\n  #map{position:absolute;inset:0;background:\n      radial-gradient(1200px 800px at 70% 30%, #122036 0%, var(--ink) 60%);\n  }\n  .leaflet-container{background:transparent;font-family:var(--body)}\n\n  /* ---------- header / selected-ward panel ---------- */\n  .panel{\n    position:absolute;z-index:1000;left:18px;top:18px;width:330px;max-width:calc(100vw - 36px);\n    background:var(--panel);border:1px solid var(--line);border-radius:10px;\n    backdrop-filter:blur(6px);box-shadow:0 8px 32px #0009;\n  }\n  .panel header{padding:16px 18px 12px;border-bottom:1px solid var(--line-soft)}\n  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--amp);text-transform:uppercase}\n  h1{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:.02em;line-height:1.1;margin-top:6px;text-transform:uppercase}\n  .sub{margin-top:6px;font-size:11.5px;color:var(--text-dim);line-height:1.45}\n\n  .nameplate{padding:14px 18px 16px}\n  .nameplate .hint{font-size:12px;color:var(--text-dim);line-height:1.5}\n  .np-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:baseline}\n  .np-ward{font-family:var(--display);font-size:46px;font-weight:700;color:var(--amp);line-height:1;grid-row:span 2}\n  .np-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--text-dim);text-transform:uppercase}\n  .np-member{font-size:15px;font-weight:600}\n  .np-meta{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-soft);\n    display:flex;gap:18px;font-family:var(--mono);font-size:11px;color:var(--text-dim)}\n  .np-meta b{color:var(--text);font-weight:600}\n\n  /* ---------- controls ---------- */\n  .controls{\n    position:absolute;z-index:1000;right:18px;top:18px;display:flex;flex-direction:column;gap:8px;\n  }\n  .btn{\n    background:var(--panel);border:1px solid var(--line);color:var(--text);\n    font-family:var(--mono);font-size:11px;letter-spacing:.06em;\n    padding:9px 12px;border-radius:8px;cursor:pointer;text-align:left;\n    transition:border-color .15s, color .15s;\n    min-width:170px;\n  }\n  .btn:hover{border-color:var(--amp);}\n  .btn.active{border-color:var(--amp);color:var(--amp)}\n  .btn .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--line);margin-right:8px;vertical-align:1px}\n  .btn.active .dot{background:var(--amp);box-shadow:0 0 8px var(--amp)}\n\n  .legend{\n    position:absolute;z-index:1000;right:18px;bottom:18px;\n    background:var(--panel);border:1px solid var(--line);border-radius:10px;\n    padding:12px 14px;font-size:11px;color:var(--text-dim);max-width:280px;line-height:1.55;\n  }\n  .legend .row{display:flex;align-items:center;gap:8px;margin-top:4px}\n  .sw{width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}\n  .sw.ward{background:#27496d}\n  .sw.sel{background:var(--amp)}\n  .pin-demo{width:10px;height:10px;border-radius:50%;background:var(--amp);border:2px solid #fff3;box-shadow:0 0 8px var(--amp)}\n  .src{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-soft);font-family:var(--mono);font-size:9.5px}\n\n  /* ---------- ward labels ---------- */\n  .ward-label{background:none;border:none;box-shadow:none}\n  .ward-label span{\n    font-family:var(--display);font-weight:700;font-size:15px;color:#dbe7f5;\n    text-shadow:0 1px 4px #000c, 0 0 12px #0008;letter-spacing:.04em;\n  }\n  .ward-label small{display:block;font-family:var(--mono);font-size:8.5px;color:#9db2cc;letter-spacing:.1em;text-shadow:0 1px 3px #000}\n  .big-labels .ward-label span{font-size:22px}\n  .big-labels .ward-label small{font-size:10px}\n\n  /* ---------- tooltips / site pins ---------- */\n  .leaflet-tooltip.ward-tip{\n    background:var(--panel);border:1px solid var(--amp);color:var(--text);\n    border-radius:6px;font-family:var(--body);font-size:12px;padding:7px 10px;box-shadow:0 4px 16px #000a;\n  }\n  .leaflet-tooltip.ward-tip::before{display:none}\n  .ward-tip .t-ward{font-family:var(--display);font-weight:700;color:var(--amp);font-size:14px;text-transform:uppercase;letter-spacing:.04em}\n  .ward-tip .t-member{margin-top:2px}\n  .ward-tip .t-pop{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px}\n\n  .site-pin{filter:drop-shadow(0 0 6px rgba(255,181,46,.65))}\n  .site-pin .core{width:12px;height:12px;border-radius:50%;background:var(--amp);border:2px solid #fff;}\n  .site-pin .ring{position:absolute;inset:-6px;border:1.5px solid var(--amp);border-radius:50%;opacity:.5;animation:pulse 2.2s ease-out infinite}\n  @keyframes pulse{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.4);opacity:0}}\n  @media (prefers-reduced-motion: reduce){.site-pin .ring{animation:none}}\n  .site-label{background:none;border:none;box-shadow:none}\n  .site-label span{font-family:var(--mono);font-size:10px;color:var(--amp);letter-spacing:.05em;text-shadow:0 1px 4px #000}\n\n  /* ---------- status overlay ---------- */\n  .status{\n    position:absolute;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;\n    background:var(--ink);transition:opacity .4s;\n  }\n  .status.hide{opacity:0;pointer-events:none}\n  .status .box{max-width:440px;text-align:center;padding:24px}\n  .status .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--amp);\n    margin:0 auto 16px;animation:rot 1s linear infinite}\n  @keyframes rot{to{transform:rotate(360deg)}}\n  .status p{font-size:13px;color:var(--text-dim);line-height:1.6}\n  .status .err{color:var(--amp)}\n  @media (max-width:640px){\n    .panel{width:calc(100vw - 36px)}\n    .controls{top:auto;bottom:18px;left:18px;right:auto}\n    .legend{display:none}\n  }\n<\/style>\n<\/head>\n<body>\n\n<div id=\"map\"><\/div>\n\n<div class=\"panel\">\n  <header>\n    <div class=\"eyebrow\">Pavement Condition \u00b7 2025 PCR<\/div>\n    <h1>Ward Pavement<br>Condition \u00b7 2025<\/h1>\n    <div class=\"sub\">Wards colored by mean PCR grade. Click any ward to see its 2025 pavement condition \u2014 mean PCR, grade mix (A\u2013F by surface area), and failed-pavement (F) backlog.<\/div>\n  <\/header>\n  <div class=\"nameplate\" id=\"nameplate\">\n    <div class=\"hint\">Click any ward to see its pavement condition.<\/div>\n  <\/div>\n  <div style=\"display:flex;align-items:center;gap:11px;padding:12px 18px 14px;border-top:1px solid var(--line-soft)\">\n    <img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALAAAADLCAMAAAD5jOluAAAAflBMVEVhYWH7+/uhoaEODg4fHx85OTkQEBD+/v4BAQEAAAAXFxeWlpYnJyc3NzdHR0enp6e3t7dnZ2d3d3dXV1eHh4fGxsbX19fn5+cMDAwVFRUlJSUREREbGxs2NjYsLCxFRUUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAdtQ6qAAAAIHRSTlMSAwm4Xx/K//4A///////////////////Qj06vcCw3GgRNXdYAABS1SURBVHja5V2Jots2rlWbzIgF91VJs/T///IB1EbKkixb0k36hm16m8SWj6lD4ACEwOavW8bPL19+3nPl5o6L/vOV4fj6z78E8J/f2TC+//lvAPz3FzaNL3//9oB/fmPV+PbjtwbcfGUP42vz2wL+4ztbHZ//+D0Bj+QVkkGN+EoqXwb4x0RekbRfTvJ1VG4uJ6+USTN5G5WvuUxB3hADixD8XVRuLiQvYwBWsyCUCW5l8V1C5eZC8jKhIzc6RHBh3V5cQOXmKvJKzlwrnfWSRcE2x2kqn3z/54ENwYD2InAE3hnPdsZZXpwCPPphpQPnLjJmFDC1iVXYnhc/fxHgf0Y2hNZLp1gILHTbcIEnaXtzd0Z4vg14FpEMVAwJfyYdYHt6VTTcCA4nhWdz2pTRMFpZJrXa4S60UXWc6eTPUbk5a8ocAYAoassgY1w4O8d9i8Y5CjsYkU8/PwzwSF6vGGiyDGyauJGuLQ5efQeFZkTh8hQpWi3ep/LrgCcRCSEyHwXHeRMVeV3X5tHV7o6mPHCNTrA1w3f5/sf9gAvy2uSY1irW1PWpnUZamuTUCV6+4XUqN2+Tl+kgE6ClMuWtl6athqmpHCWY6IGTABVveeuXABciUinUZMxq2ZVU7clbD16bOtd61mkw4JJ9x1u/8uJSRGrNcbnJGs5I3nrUVBaKWXyrQVkXR268QuXmLcsL5Iat1tUNV7HdGKlmueX4L4CMIvL+Av/9+3LABXm9MRLp4HGCi+kVut0ZNZW51rQAFRhcBS8Kz2OAm++lTwBvXFSmnDYI7ZNRGT78f7AGoykfXxWezQtskJYJTzPLtPK8xGu79unobOWpdUuLtQvz3B8zcQcAT8kcl5zmmiXJqtndIW89aoPtcC2i07F6/qMj3ro56oczT1tArCKact3vk7ceuvLWwhi8WT5DH3nxn5OASxHJo0K3KtBKwSvk3aGy19IbloLXJDKOZTybw364U9YxI/BDNvzwsZEqKvvOW6O9AdbFcIjKzTFTZvuAjZlKNcrYvjEqKgvFPdMG1Sfrdd+zGKo5Ql4wzgRmJEA5PYK3bw5dqw8EC21gIs1U/udlwKOIlCRSkGMsCdtV2st17fujXLXgldLWoihS8+3b9NbNPnlVcs4YMu/c23PkXVC5+vIcjTIIE7R9KjybJ+QFjMOs4doa2BGR74xah3i6ZU6Yp2miZltE4oxiUEOG3QjrYF9EvjMWwtOAj9ybguBr3rrZjICENoFHyyJ6CriMvDvCM3AZfBKqcH0rVG62LK8wCmM2SKh5q/BdpfbCUVHZckmRiJGFqX+gcrNFXp1yVs8lJSpv2l48auGJqw7NcWc0RjNi1So3axEQ3qng0GniVw7uhB9+ncoCgwKCjBo/xFUqN2t+GKUjGkY05W2V57Vde8uohKdAtZKDktIhfl8B/LOIgELHZOIYF8g3RORZby11EhiIIOQimzRvtQ+A/zMmcyRaXU2vxjhIxvdE5DlvrZPSRuFqx0C3sCLfmgLwKCJBdyANJNQNlms5Z6bvIe+G8FSQVZxAclcpj+/NCHhIo4MXQitltHUK2cC5nFM87QeMksrgbPDK1A4gm7hmMmXIUdRjEVDimMqU3UneHeFpNYRl/hZjqDmZA2BsdMHKaCz7OPJuC0+r3dqmThWxMJ46Vu0Uu/aDR2D7o6nkh8IgHi4UkeeF5z5g1XJ2sYg87633AIfHNPqvGRyOAb5HRJ4XngcA/wryHqPyKuBfRd4jVG7Wtizb32SsUfkRsO3a32bUGc91wKH9rUZ4Cpj/XoD5/3vAKeLoYv6BA38a+sNu+IsH0hnrrRVS2bBvaWLwUkghhNRcdxcClrmwqya566vpUCTVL45GWFXWc2whSU6MWx190sfHSwGrYi8F9ca0DlQ1iwbnlUnHSrW36n/KpS+yVqdrmYsA01SUPkd2RZKtjJwsRiws/2K2eMUj5KU/sNIJkLAhZF8GjDMmg3POukDb9sy2IxoB5YsxwM7JUvwAJaXC2caYFyQCWSAOAor7hf8V4PM3XM/RvAyYBwxCtPXBKlBciq4r7ub04ugBmBR5b4h+AC4n5X1mah2x6JkweaYlSMUV/qFQqy7gZcBgPU7CvLnGpywxzC9OQL/LUxd4XSBB7CxWVIfIJIbF/RVFP9uIWEjKMKULACsvCs6ZnhDC93AGkdSJftqskly7mcFiUFIyFY5LqHErVA7zILxF6EoKUBcAxqiwWHNot4K1njIdGWN/Ez1zlLkLnKyaVK4GrJG2s9GZszmEGfKXC1PdcbzErMlpfXBD1MS5wAViJY5+hr2lKhqKBjN/teGaiij6N9kWF+toAeL07WnFdjiipS2qHriS+gJK0HVA5NunNjZYbEA7klcYuHkddm2XkjFtpD3/OC65yYbjNxkhuekeyvOALYjRK8F6hiIn4IbNXGdn22R44DG2ff5ILQHLCXCbU+7Dwu4u8XRTwc72DtaQBfN6+VGheq8eXTfhm1+bUurwduBoLwW8LpUHC4WrE2rxkL+JrxIyhg1JsDyhR3JgpwDbVSEzpe84V9VX6mgl2YqduldSIKxTCrFv66PzgGGDEtMVqZagvqV+yJ32pZfjt0O/gfOLv6ThCF26XcynZhhvoaMR8n/NKHp6QMmNqOblCAUn0sPlcPp7VwcqXAe4SnhO29cwmyDf/y6XHS2tEsFxg9gJA4k30jYtjzcA5h350ME/Dej6yiqXkfjFp5EzC/UC2MjoSPwgdzElBOepExJGKSRHc0viobdqS88i+8ikWrG2qq2aq4s13cArAauE6yfqclIGAJ6rQSXLR8BTeDV9mWHjb1EVZvBWrSWc3gVM1eAZESwB0wsS73GJFcBjkcVMl7GoZRLy6Eyl7FrNlbomRKJiieHynXycYdqHJ7Yq6x98CoUe0i753U8yTCEHhiesS6vO9GXAQXqp5rxxdEVN2Jia8QYwgnJWLnMagw6Bh72Hjqq1e8zjkuih+fMxnVeWBMBw/6wZtcCYMjSsKLtbTFBRkPaYoEnalrWbLtK8q4soAaOdMC3nIXCTEp9cc1HbFxaOY44+1hPOad4LRC1ETjtds+hyVAvretgnWNJkkqZ+4pLY8r9mspJmjcRvOg4rBWwJeF5WA/GawmyK6emrJCQXrkEcvjWu0kh48S5/8XjJDAtHcfvjiugVGC8uWt7SwIqsUeilz/C4qLdFckqNHyyvAgx78nKRdZ6LBU1lbFO/IES2ZRSnysUMsw5NJqhr1doG4PoCihuM5Fpdb/IMNjtnh1SujpFZVqaxJiP0avQywJQA2drGrR746+crLnL9aZx056W39CIyCdLm6niKcEUfG7orZxg2951HX0v+DrkupkfnRka4SdJbAVNQS06519ZWuDzBj7mf60OkfrdHUi6gks79G3vXMFm7NGR7KO8mVP6Gw5/0OSV+bcTht6sGYFQGEzHkmJJCZZMWESB+OShXJIV2RA5/mVoTe4tuvWggTN+1us1mvtz8M4vL4PwlAl7ApKv83rYlLGS5Mes+LuZJXwDOUk1fEnF4mFJru4AftrM9H0vKNsy2mClh0OBtbBe/rtaU41bh8Eo92XPsQlV43W3uWqeALsLbMThEG6K3tjju3qeLnPvMISFDh6A2t76MdmgA0biA8PxXbyxSFpV+PEtEdWu5tP+9ndCNW48STb/LmmA9xgAxfRTgFHLuWgiRXDCvVa7EYgNESGs+AjDtDkC/C4PxjVBcH8Y86VAxmuvnpS+nAUc/en/qIQAUwsPBYrzat6BHIntibwYc0X5OypGnXqAxvxKwBWsMd453lVMuwj9DbxZ7/v4CwCbPzKTndzZTTL4B+fGoaX7ROsOkQ9lYfqtvBEypVe7HqngTCm32+FLgZvC7w2YpE5XMF8N1ZLoN8BD1SG451TgME0zhtLb8MWxKfV4rjZFmjZflLWaSQfY2wKO8kc5yxac1T9t4djHFNuv9rJvi8F3FtD8Tuy4FEEpZ2k9V3twEOM1JFbrPxo950xxrmKXqBcrD4V/FOg6YUlwopvJ+gdwt+T0D2E9RxZB9mBQleCXDUqVLUvXQz3Ac8nGlRg0qcYuuZ9+QnwHsHlNoAyvIMs/TND5EOdRGxCEgUX0kkD5QS0whfzGVctwmVENVVZjufoe6zfaA/RRlTPFodz/gwPtNKmELwDClLbKER26oPvr0IdPEEmAMgMbHAOi9JqfqUAnfDDjnxaAKRscwyHoVppgYl7+0TrGhBCtmTospgzy3d9Am3AoYJ0V5DBMK7eAURTvRCuHDuLbK4JJ1HQHWhY0o7EU88CDsqUX34ESjwlurcropS8XHbUPdkr2zMHpHX6aw3IHHGK6NOPqqKT9F1GZlh1NpuhFqyKmqMrbm4km242LAJjdAGLog8McMa4+G4jaet8SzREvJ6P7pEmk6N5TCfQxgTn1SxNAe0E8KZ5HHNFOS2UsfvKdythBdiAm9M4O8RW0+AjDtFzrOhwfC1JiZwMHxl8hlbAgOxJxjF1NNm+z4uPuhV8Xp9YDzVood1MVjSkj1phkGMMNKs2F6diyF8tGReDvg4eMcbDyvpOr9Ultmr1xb0kfZ/TL2SwDj9PaFJpkQa0Weqq5s0qPhhcI38+GByn1OXAHYZlEIQ5HEqh1VpSXOgEnoKQLsFlsjVJ3r7gQ88haXVNosjFJluWbvASFXrcAcwnW9lJbRmJ3sxmnAxS5isLAVQC4o0Q7bCfRE3/wWjFQU3qjO7JH4LODy/cZsSsQFJabf04Phy/qxDvYs8UnAmi2QbIfX1cum93UClvEANRq8ixJxp0ywmu1uLrrtiqIA6o85Gu35WibCXYuuavbUtVxzCsnQtzldZ4OpnxpqUVTtoZ5OR+GzTikWuzitv8usVS1DVY4jhlQOqoRqn1QxF5ynnYbUVdu7Qa9VgN3kODoXuRubKOA6CRQtaR2oq+jC+o81rGj2hvU0JKa0VmN5c1ENd5OWsFTU5fjEiH57CaijKBWzqUfAMuqQygDbRvoSzgZ2cPWeDJHYlBFDi9aNGnJIUosVsqdC2FCt9/houOJPawTOAx5Wfuhzpe28xyXYrMtqwLTEZhOL3GFiqKKy01P3srsL8LBcqHkeIBOnmgMeISuLxxn2SdTSMYypVgCvvXLB2mfJ8OeA3a7myWnsSFmzfKkc9tj89Fc1w7bfs1XLcKILUlIZTc5ZoWt+/izy8ycWN58QDvTwG/7yXCkQIqai0kB6Wc2wk1Ss6VeXlKFKJSEVRkpPheHKs8LNajHvoZGG0mceQ+Iu8IoS4Id07JnmCWu1u6vPNZ9u0SBlsH0wcQKwXm3FvfHk+MkmGD7bEMthPyTe3f4p+7z4p4DPthmh/eYutf2u8zvvL+uieScOAP6QRi6btqF85hGkPjLD7KO7jWyQV2HMC/EY4I/s57JOXq8DMy664qSBfcAf/6R+VRepjNBcGnSm3dTUae1QFeH8r6Ly2O8ArAI08V7qROnRuXfl16Zq2jyGw7z0iB/XbWJ6glhFR/8wQ52VxSwovv3MnZTqnu7MRcmMrKKLD+nnUfhh1FPRoji1BklsRwIPnZQeTq8xKuA3y+psWq73d0wpy8hExHAR4UZVPkHbt+NrHs8H8tp2Ar2UDYJrWGxg3k3e4RZLDG89K1spjb07m5Xue8pB7h7mdbHrdiuVy8fflaNzJxJFXmIm74/djna0cUHGOsRDwvNC8uZdEWrk6sqniMpOh83qQUw+MaUZJFCmcju3ULkkb4h0Kg1DShady6peks1qg1nBBcOA10KSstoaEpdTuZwQET012rQeo221JO9G38uSylEF2isW3q9W5V/thyWl6AEtGpqyyRE8dKluNo+JyXfIYuSreOD3ULlsngxaR4trJpaftdJxttlvQ6218dGzRROLi7x1KSKlC8ybYDg382b0Wnvq5kmvZElZMh1pn/li4VmS13eKskFGYFg1bZauN4Zvnp6LJ40iCQWGX9lIsCSvoConlpQqexp++vvFltSzVZZBcbxgDErARcKzioA0sTZhXFHM+Xbn7+bIWRZOC5c4+uwq4fq+8Cx7q1vLObPgqn7XO8cEHOpSTl25cwtPVh928x6VqxVsKF+Ik1u2DN49iOFYH3jO0QLpoK0RyZ2LoVIdAQHKc5WYP8KGI532//g8rjzHgpOtRWdUt898zVtXzyIoI02ApEIsyv2fHSby9CyDkcqS8v249KiTRX3uA39LRKKZzH4UlPbzU6XPz7g4cFpEGUMpQ5TrOzy9LDxL8krDTXZs5Zo4corIK+dx0LwYq8nNLw6WOuKt60ykJhEZjA7sKHlfOvFkpDKVYydkh4hykal7RuWSvKCN4kSHqs/YwZNwjp4pM3lrbRXPz/dZXfUg3BeeVRPZ6GWyuNbKLbDDx2YdP7VnoLJynaCjAiSvDivZpXLJH8vxHqGQlCUbXjjN6ZVzkQYqe92CchzjPVNVMW8+bV37YU1+qPquL52X9dKpT6PwdDoJLT0VVib2THjW55TlNkSplA0vHq734tleA5WlRwJoOh4vsNqPLL11iYzKyo12GCkWWu3VM99ePj1tFp7AjOPj06fr3roUkcrwnLejQ6D0ZgR0x4F6o1W2EZWA0znXAmsZz7ovqO+fMNdGvEfeEycADudQSe1sF5RmAhUMPCbvKxFJx3Eujvh675DTU2csUjIUPYDsojD1Dr0wZQt3FQ3dEFPlZd48RvbkKZZSdxjfaNfa7Zw4SjJBksGIMPc//+BTLOfT6oT2quXG7XTq9gjTG6Gt11NY+P3to5BPnMQ6CE/ggm92FoecnktoULjsyjT6rznrdqCy4Jv7UMY7KcGivTAgz5H3CsAPyfsFeZEJktPphg6mQ71/6WnCf20fPZ/L4g3jWkbv1Msi8j7A9XlwdcE+HbbGXWnwzhwjfBngKk1UMcKjbnbhtOW9HvAmlVUqxNyXz5d81EWn2f+5SmUl56Dk/ROabwG8Q+WryHs1YKTypy24n35e9ykXAt6i8lnLeyPgVSp/v/Yjrr0aXm9h4j79uPoD/rp6/PhyFxtuAozCc4T8+Y+//hWAB+H59Z5r/3XL+PHp2497rvx/q3XgcWHZuy4AAAAASUVORK5CYII=\" alt=\"The FixOurStreets216 Project\" style=\"width:34px;height:auto;display:block;filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 9px rgba(255,255,255,.65)) drop-shadow(0 0 21px rgba(255,255,255,.35)) drop-shadow(0 0 45px rgba(255,199,44,.20))\">\n    <div style=\"font-family:var(--display);font-size:12.5px;font-weight:600;color:var(--text);line-height:1.2\">The FixOurStreets216 Project<small style=\"display:block;font-family:var(--mono);font-size:8.5px;font-weight:400;letter-spacing:.16em;color:var(--text-dim);margin-top:3px\">CLEVELAND WARD EXPLORER &middot; 2026<\/small><\/div>\n  <\/div>\n<\/div>\n\n<div class=\"controls\">\n  <button class=\"btn\" id=\"btnSites\"><span class=\"dot\"><\/span>Project sites: ON<\/button>\n  <button class=\"btn\" id=\"btnAdd\"><span class=\"dot\"><\/span>Add site (click map)<\/button>\n  <button class=\"btn\" id=\"btnLabels\"><span class=\"dot\"><\/span>Big labels<\/button>\n  <button class=\"btn\" id=\"btnBase\"><span class=\"dot\"><\/span>Street basemap<\/button>\n  <button class=\"btn\" id=\"btnFull\"><span class=\"dot\"><\/span>Fullscreen<\/button>\n  <button class=\"btn\" id=\"btnReset\"><span class=\"dot\"><\/span>Reset view<\/button>\n<\/div>\n\n<div class=\"legend\">\n  <div class=\"row\" style=\"gap:5px\">\n    <span class=\"sw\" style=\"background:#19C3B2\"><\/span><span class=\"sw\" style=\"background:#4fb87a\"><\/span>\n    <span class=\"sw\" style=\"background:#e0b53a\"><\/span><span class=\"sw\" style=\"background:#E1560F\"><\/span>\n    <span class=\"sw\" style=\"background:#c53a2e\"><\/span>&nbsp;Mean PCR grade&nbsp; A&nbsp;91\u2013100 &rarr; F&nbsp;\u226460<\/div>\n  <div class=\"row\"><span class=\"sw\" style=\"background:#243038;border:2px solid #fff\"><\/span> Selected ward<\/div>\n  <div class=\"src\">SOURCE: 2025 Pavement Condition Rating (PCR) file \u00b7 Ward boundaries: City of Cleveland Open Data (Ord. No. 1\u20112025)<\/div>\n<\/div>\n\n<div class=\"status\" id=\"status\">\n  <div class=\"box\">\n    <div class=\"spin\" id=\"spin\"><\/div>\n    <p id=\"statusMsg\">Loading 2026 ward boundaries from the City of Cleveland Open Data portal\u2026<\/p>\n  <\/div>\n<\/div>\n\n<script>\n/* ============================================================\n   Cleveland 2026 Ward Map \u2014 built for a CPP microgrid briefing\n   Data: City of Cleveland Open Data (ArcGIS FeatureServer)\n   ============================================================ */\n\nconst WARDS_URL =\n  \"https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/\" +\n  \"Cleveland_Wards_1_2_25_Topocleaned_pop20/FeatureServer/0/query\" +\n  \"?where=1%3D1&outFields=*&outSR=4326&f=geojson\";\n\n/* Current council roster for the 2026 wards (terms began Jan 2026) */\nconst COUNCIL = {\n  1:\"Joseph T. Jones\", 2:\"Kevin L. Bishop\", 3:\"Deborah Gray\", 4:\"Kris Harsh\",\n  5:\"Richard A. Starr\", 6:\"Blaine A. Griffin\", 7:\"Austin N. Davis\",\n  8:\"Stephanie D. Howse-Jones\", 9:\"Kevin Conwell\", 10:\"Michael D. Polensek\",\n  11:\"Nikki Hudson\", 12:\"Tanmay Shah\", 13:\"Brian Kazy\", 14:\"Jasmin Santana\",\n  15:\"Charles J. Slife\"\n};\nconst TITLES = { 6:\"Council President\" };\n\n/* Pre-loaded project sites (approximate \u2014 drag pins to fine-tune) */\nconst DEFAULT_SITES = [];\n\n/* Muted blue-steel ramp so the amber selection reads as \"energized\" */\nconst RAMP = [\"#1d3a5c\",\"#27496d\",\"#1f4364\",\"#2c5378\",\"#234a6b\",\n              \"#305b82\",\"#1b3b58\",\"#2a5070\",\"#214766\",\"#2e587e\",\n              \"#1e4060\",\"#284d72\",\"#22506a\",\"#33608a\",\"#1c3d5e\"];\n\nconst WARD_PCR = {\"1\":{\"seg\":819,\"pcr\":56.4,\"A\":65907,\"B\":106978,\"C\":216314,\"D\":147399,\"F\":625508},\"2\":{\"seg\":1183,\"pcr\":58.7,\"A\":64837,\"B\":192118,\"C\":237059,\"D\":196248,\"F\":657225},\"3\":{\"seg\":1262,\"pcr\":58.2,\"A\":67150,\"B\":228238,\"C\":290651,\"D\":183694,\"F\":650075},\"4\":{\"seg\":795,\"pcr\":56.2,\"A\":66758,\"B\":128719,\"C\":75253,\"D\":217250,\"F\":588842},\"5\":{\"seg\":1490,\"pcr\":58.9,\"A\":88368,\"B\":142976,\"C\":227366,\"D\":320275,\"F\":950519},\"6\":{\"seg\":1268,\"pcr\":59.2,\"A\":60325,\"B\":190664,\"C\":232342,\"D\":259323,\"F\":708080},\"7\":{\"seg\":1658,\"pcr\":58.7,\"A\":101085,\"B\":238046,\"C\":247662,\"D\":173413,\"F\":763558},\"8\":{\"seg\":1762,\"pcr\":53.6,\"A\":75103,\"B\":271275,\"C\":220926,\"D\":303974,\"F\":1270702},\"9\":{\"seg\":1321,\"pcr\":57.3,\"A\":93982,\"B\":138428,\"C\":233708,\"D\":202684,\"F\":768485},\"10\":{\"seg\":1115,\"pcr\":61.5,\"A\":127251,\"B\":261550,\"C\":143321,\"D\":172940,\"F\":675836},\"11\":{\"seg\":889,\"pcr\":57.0,\"A\":37327,\"B\":136950,\"C\":132524,\"D\":173536,\"F\":539784},\"12\":{\"seg\":638,\"pcr\":62.1,\"A\":37348,\"B\":118778,\"C\":153973,\"D\":171362,\"F\":444856},\"13\":{\"seg\":964,\"pcr\":57.4,\"A\":66970,\"B\":106607,\"C\":241457,\"D\":180684,\"F\":683419},\"14\":{\"seg\":1172,\"pcr\":54.7,\"A\":44519,\"B\":171542,\"C\":133726,\"D\":116116,\"F\":560932},\"15\":{\"seg\":955,\"pcr\":57.6,\"A\":46326,\"B\":160620,\"C\":200606,\"D\":236841,\"F\":688335}};\nconst GC={A:\"#19C3B2\",B:\"#4fb87a\",C:\"#e0b53a\",D:\"#E1560F\",F:\"#c53a2e\"};\nconst gradeOf=p=>p>=91?\"A\":p>=81?\"B\":p>=71?\"C\":p>=61?\"D\":\"F\";\n\nconst map = L.map(\"map\",{zoomControl:false, doubleClickZoom:false, attributionControl:false})\n  .setView([41.4822,-81.6697], 11);\nL.control.zoom({position:\"bottomleft\"}).addTo(map);\nL.control.attribution({position:\"bottomleft\", prefix:false}).addTo(map);\n\nlet baseLayer = null, baseOn = false;\nlet wardLayer = null, labelGroup = L.layerGroup().addTo(map);\nlet siteGroup = L.layerGroup().addTo(map);\nlet selected = null, addMode = false, homeBounds = null;\nlet selectWardByNum = null;\n/* allow the parent page to drive selection (panel \u2192 map) */\nwindow.addEventListener(\"message\", e => {\n  if(e.data && e.data.type === \"selectWard\" && selectWardByNum) selectWardByNum(e.data.ward);\n});\n\nconst $ = id => document.getElementById(id);\n\n/* ---------- field detection (ward # / population) ---------- */\nfunction detectFields(features){\n  const sample = features[0].properties || {};\n  const keys = Object.keys(sample);\n  let wardKey = keys.find(k => /^ward(s)?([ _-]?(no|num|number|id))?$/i.test(k));\n  if(!wardKey) wardKey = keys.find(k => /ward/i.test(k) && features.every(f=>{\n      const v = parseInt(String(f.properties[k]).replace(/\\D/g,\"\"),10);\n      return v>=1 && v<=15;\n  }));\n  if(!wardKey) wardKey = keys.find(k => features.every(f=>{\n      const v = parseInt(f.properties[k],10); return v>=1 && v<=15;\n  }));\n  const popKey = keys.find(k => /pop/i.test(k) && !/per|pct|density/i.test(k));\n  return { wardKey, popKey };\n}\nconst wardNum = (props, key) => parseInt(String(props[key]).replace(/\\D/g,\"\"),10);\n\n/* ---------- ward styling ---------- */\nfunction wardStyle(n, isSel){\n  const d = WARD_PCR[n];\n  const fill = d ? GC[gradeOf(d.pcr)] : \"#3d5f8a\";\n  return {\n    color: isSel ? \"#ffffff\" : \"#0e1a2b\",\n    weight: isSel ? 3 : 0.8,\n    fillColor: fill,\n    fillOpacity: isSel ? .92 : .72,\n    opacity: 1\n  };\n}\n\nfunction nameplate(n, pop){\n  const member = COUNCIL[n] || \"\u2014\";\n  const d = WARD_PCR[n];\n  if(!d){\n    $(\"nameplate\").innerHTML = `<div class=\"np-grid\"><div class=\"np-ward\">${n}<\/div>\n      <div class=\"np-label\">Ward ${n}<\/div><div class=\"np-member\">${member}<\/div><\/div>\n      <div class=\"np-meta\"><span>No pavement data<\/span><\/div>`;\n    return;\n  }\n  const g = gradeOf(d.pcr);\n  const tot = d.A+d.B+d.C+d.D+d.F || 1;\n  const pct = k => d[k]/tot*100;\n  const bar = [\"A\",\"B\",\"C\",\"D\",\"F\"].map(k =>\n    `<span title=\"${k}: ${Math.round(d[k]).toLocaleString()} SY\" style=\"width:${pct(k).toFixed(2)}%;background:${GC[k]}\"><\/span>`).join(\"\");\n  const dfPct = (pct(\"D\")+pct(\"F\"));\n  $(\"nameplate\").innerHTML = `\n    <div class=\"np-grid\">\n      <div class=\"np-ward\" style=\"color:${GC[g]}\">${d.pcr.toFixed(0)}<\/div>\n      <div class=\"np-label\">Ward ${String(n).padStart(2,\"0\")} &middot; Mean PCR &middot; Grade <b style=\"color:${GC[g]}\">${g}<\/b><\/div>\n      <div class=\"np-member\">CM ${member}<\/div>\n    <\/div>\n    <div style=\"display:flex;height:10px;border-radius:5px;overflow:hidden;margin:11px 0 5px\">${bar}<\/div>\n    <div style=\"font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--text-dim);display:flex;justify-content:space-between\">\n      <span style=\"color:#19C3B2\">A<\/span><span style=\"color:#4fb87a\">B<\/span><span style=\"color:#e0b53a\">C<\/span><span style=\"color:#E1560F\">D<\/span><span style=\"color:#c53a2e\">F<\/span>\n    <\/div>\n    <div class=\"np-meta\">\n      <span>SEGMENTS <b>${d.seg.toLocaleString()}<\/b><\/span>\n      <span>F&nbsp;BACKLOG <b>${Math.round(d.F).toLocaleString()} SY<\/b><\/span>\n      <span>D+F <b>${dfPct.toFixed(0)}%<\/b><\/span>\n    <\/div>`;\n}\n\n/* ---------- load wards ---------- */\nfetch(WARDS_URL)\n  .then(r => { if(!r.ok) throw new Error(\"HTTP \" + r.status); return r.json(); })\n  .then(gj => {\n    if(!gj.features || !gj.features.length) throw new Error(\"No features returned\");\n    const { wardKey, popKey } = detectFields(gj.features);\n\n    wardLayer = L.geoJSON(gj, {\n      style: f => wardStyle(wardNum(f.properties, wardKey) || 1, false),\n      onEachFeature: (f, layer) => {\n        const n = wardNum(f.properties, wardKey);\n        const pop = popKey ? f.properties[popKey] : null;\n        const member = COUNCIL[n] || \"\u2014\";\n        const _d = WARD_PCR[n];\n        layer.bindTooltip(\n          `<div class=\"t-ward\">Ward ${n}${_d?` &middot; Grade ${gradeOf(_d.pcr)}`:\"\"}<\/div>\n           <div class=\"t-member\">${_d?`Mean PCR ${_d.pcr.toFixed(0)}`:\"No data\"}<\/div>\n           ${_d?`<div class=\"t-pop\">${Math.round(_d.F).toLocaleString()} SY failed (F) &middot; click for detail<\/div>`:\"\"}`,\n          { className:\"ward-tip\", sticky:true }\n        );\n        layer.on(\"mouseover\", () => { if(layer !== selected) layer.setStyle({weight:2, color:\"#9db9d8\"}); });\n        layer.on(\"mouseout\",  () => { if(layer !== selected) layer.setStyle(wardStyle(n,false)); });\n        layer.on(\"click\", () => {\n          if(addMode) return;            // site-placement clicks pass through\n          if(selected){\n            const sn = wardNum(selected.feature.properties, wardKey);\n            selected.setStyle(wardStyle(sn,false));\n          }\n          selected = layer;\n          layer.setStyle(wardStyle(n,true));\n          layer.bringToFront();\n          nameplate(n, pop);\n          try{ if(window.parent && window.parent !== window)\n            window.parent.postMessage({type:\"wardSelect\", ward:n}, \"*\"); }catch(_){}\n        });\n\n        /* centroid label (largest ring bbox center) */\n        let best = null, bestLen = -1;\n        const polys = f.geometry.type === \"Polygon\" ? [f.geometry.coordinates] : f.geometry.coordinates;\n        polys.forEach(p => { if(p[0].length > bestLen){ bestLen = p[0].length; best = p[0]; } });\n        let sx=0, sy=0; best.forEach(c => { sx+=c[0]; sy+=c[1]; });\n        const cLng = sx/best.length, cLat = sy/best.length;\n        L.marker([cLat,cLng], {\n          icon: L.divIcon({ className:\"ward-label\",\n            html:`<span>W${n}<\/span><small>${WARD_PCR[n]?\"PCR \"+WARD_PCR[n].pcr.toFixed(0):\"\"}<\/small>`,\n            iconSize:[60,30], iconAnchor:[30,15] }),\n          interactive:false, keyboard:false\n        }).addTo(labelGroup);\n      }\n    }).addTo(map);\n\n    homeBounds = wardLayer.getBounds();\n    map.fitBounds(homeBounds, { padding:[40,40] });\n\n    /* build a number\u2192layer index so the parent page can select a ward */\n    const idx = {};\n    wardLayer.eachLayer(l => { idx[wardNum(l.feature.properties, wardKey)] = l; });\n    selectWardByNum = (n) => {\n      const l = idx[n]; if(!l) return;\n      if(selected){\n        const sn = wardNum(selected.feature.properties, wardKey);\n        selected.setStyle(wardStyle(sn,false));\n      }\n      selected = l;\n      l.setStyle(wardStyle(n,true));\n      l.bringToFront();\n      const popKey2 = Object.keys(l.feature.properties).find(k => /pop/i.test(k) && !/per|pct|density/i.test(k));\n      nameplate(n, popKey2 ? l.feature.properties[popKey2] : null);\n      map.panTo(l.getBounds().getCenter(), {animate:true, duration:.5});\n    };\n\n    DEFAULT_SITES.forEach(s => addSite(s.lat, s.lng, s.name));\n    $(\"status\").classList.add(\"hide\");\n  })\n  .catch(err => {\n    $(\"spin\").style.display = \"none\";\n    $(\"statusMsg\").innerHTML =\n      `<span class=\"err\">Couldn\u2019t reach the City of Cleveland Open Data service.<\/span><br><br>\n       This map loads live 2026 ward boundaries from data.clevelandohio.gov, so it needs an\n       internet connection. If you\u2019re previewing inside a restricted window, download this file\n       and open it directly in your browser.<br><br>\n       <span style=\"font-family:var(--mono);font-size:10px\">${err.message}<\/span>`;\n  });\n\n/* ---------- microgrid site pins ---------- */\nfunction siteIcon(){\n  return L.divIcon({ className:\"site-pin\",\n    html:`<div class=\"ring\"><\/div><div class=\"core\"><\/div>`,\n    iconSize:[12,12], iconAnchor:[6,6] });\n}\nfunction addSite(lat, lng, name){\n  const m = L.marker([lat,lng], { icon:siteIcon(), draggable:true }).addTo(siteGroup);\n  m.bindTooltip(`<span>${name}<\/span>`, {\n    className:\"site-label\", permanent:true, direction:\"right\", offset:[10,0]\n  });\n  m.on(\"dblclick\", () => siteGroup.removeLayer(m));\n  return m;\n}\nmap.on(\"click\", e => {\n  if(!addMode) return;\n  const name = prompt(\"Site label (e.g., \u201cCPP Substation \u2014 E 55th\u201d):\", \"Microgrid site\");\n  if(name) addSite(e.latlng.lat, e.latlng.lng, name);\n});\n\n/* ---------- controls ---------- */\n$(\"btnSites\").onclick = function(){\n  const on = map.hasLayer(siteGroup);\n  if(on) map.removeLayer(siteGroup); else map.addLayer(siteGroup);\n  this.classList.toggle(\"active\", !on);\n  this.innerHTML = `<span class=\"dot\"><\/span>Project sites: ${on ? \"OFF\" : \"ON\"}`;\n};\n$(\"btnSites\").classList.add(\"active\");\n\n$(\"btnAdd\").onclick = function(){\n  addMode = !addMode;\n  this.classList.toggle(\"active\", addMode);\n  map.getContainer().style.cursor = addMode ? \"crosshair\" : \"\";\n};\n\n$(\"btnLabels\").onclick = function(){\n  document.body.classList.toggle(\"big-labels\");\n  this.classList.toggle(\"active\");\n};\n\n$(\"btnBase\").onclick = function(){\n  baseOn = !baseOn;\n  if(baseOn){\n    if(!baseLayer){\n      baseLayer = L.tileLayer(\"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png\",\n        { maxZoom:19, attribution:\"\u00a9 OpenStreetMap \u00a9 CARTO\" });\n    }\n    baseLayer.addTo(map); baseLayer.bringToBack();\n  } else if(baseLayer){ map.removeLayer(baseLayer); }\n  this.classList.toggle(\"active\", baseOn);\n};\n\n$(\"btnFull\").onclick = () => {\n  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();\n  else document.exitFullscreen?.();\n};\n\n$(\"btnReset\").onclick = () => { if(homeBounds) map.fitBounds(homeBounds,{padding:[40,40]}); };\n<\/script>\n<\/body>\n<\/html>\n";
+(function(){var f=document.getElementById("ward8-frame"); if(f){f.srcdoc=WARD8_MAP_HTML;}})();
+</script>
+</body>
+</html>
