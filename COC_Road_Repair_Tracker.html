@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityCLE·RRTS — Road Repair Tracking System | City of Cleveland</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--bg2:#161b25;--bg3:#1e2535;--bg4:#252d40;--border:#2a3550;--border2:#344060;--accent:#ff6a1a;--accent2:#19c3b2;--accent3:#0099ff;--text:#e8eaf0;--text2:#8d97b0;--text3:#5a6480;--green:#00c97a;--red:#ff4f6a;--amber:#ffaa00;--purple:#a855f7;--font:'Segoe UI',system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh}
+.hdr{background:var(--bg2);border-bottom:2px solid var(--accent);height:46px;display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;z-index:1000}
+.logo{font-size:15px;font-weight:800;color:var(--accent);white-space:nowrap}
+.logo span{color:var(--text3);font-weight:400;font-size:11px}
+.htabs{display:flex;gap:2px;margin-left:4px}
+.htab{padding:5px 11px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);border:none;background:transparent;white-space:nowrap}
+.htab:hover{background:var(--bg3);color:var(--text)}
+.htab.on{background:var(--bg3);color:var(--accent);font-weight:700}
+.hbadges{margin-left:auto;display:flex;gap:6px;align-items:center}
+.bdg{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid}
+.bdg-g{background:rgba(0,201,122,.12);color:var(--green);border-color:rgba(0,201,122,.3)}
+.bdg-o{background:rgba(255,106,26,.12);color:var(--accent);border-color:rgba(255,106,26,.3)}
+.bdg-a{background:rgba(255,170,0,.12);color:var(--amber);border-color:rgba(255,170,0,.3)}
+.bdg-t{background:rgba(25,195,178,.12);color:var(--accent2);border-color:rgba(25,195,178,.3)}
+.body{flex:1;overflow:hidden;display:flex}
+.pane{display:none;flex:1;overflow:hidden}
+.pane.on{display:flex}
+#pane-map{flex-direction:row}
+.sidebar{width:300px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.maparea{flex:1;position:relative}
+#map{width:100%;height:100%}
+.rpanel{width:300px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#pane-repairs{flex-direction:column}
+.twocol{display:flex;flex:1;overflow:hidden}
+.tc-left{width:380px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.tc-right{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg)}
+.tbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tbl-wrap{flex:1;overflow:auto}
+.rtbl{width:100%;border-collapse:collapse;font-size:12px}
+.rtbl th{padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:2}
+.rtbl td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.rtbl tr:hover td{background:rgba(255,106,26,.05);cursor:pointer}
+.panel{padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px}
+.lot-list{flex:1;overflow-y:auto;padding:6px 8px}
+.lot-item{padding:8px 10px;border-radius:6px;border:1px solid var(--border);margin-bottom:5px;cursor:pointer;background:var(--bg3)}
+.lot-item:hover,.lot-item.sel{border-color:var(--accent);background:rgba(255,106,26,.07)}
+.lh{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.lid{font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmeta{font-size:11px;color:var(--text2)}
+.stabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.stab{flex:1;padding:9px 4px;text-align:center;font-size:11px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent}
+.stab:hover{color:var(--text2)}
+.stab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.scrollable{overflow-y:auto;flex:1;padding:10px}
+.info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px}
+.info-row:last-child{border-bottom:none}
+.ik{color:var(--text3);flex-shrink:0}
+.iv{color:var(--text);font-weight:500;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.sv{font-size:22px;font-weight:800;line-height:1}
+.sv.g{color:var(--green)}.sv.a{color:var(--amber)}.sv.r{color:var(--red)}.sv.b{color:var(--accent3)}.sv.c{color:var(--accent)}.sv.t{color:var(--accent2)}
+.sl{font-size:10px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.fbtn{padding:4px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer}
+.fbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+.fbtn:hover:not(.on){color:var(--text)}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:6px 9px;color:var(--text);font-size:12px;width:100%;font-family:var(--font)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;min-height:56px}
+.ilabel{font-size:11px;color:var(--text3);margin-bottom:3px}
+.igroup{margin-bottom:9px}
+.ig2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ig3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn{padding:7px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:5px;justify-content:center}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{filter:brightness(1.15)}
+.btn-t{background:var(--accent2);color:#000}.btn-t:hover{filter:brightness(1.1)}
+.btn-s{background:var(--bg3);color:var(--text);border:1px solid var(--border)}.btn-s:hover{border-color:var(--border2)}
+.btn-d{background:rgba(255,79,106,.12);color:var(--red);border:1px solid rgba(255,79,106,.3)}
+.btn-row{display:flex;gap:6px;margin-top:8px}
+.bsm{padding:4px 9px;font-size:11px;border-radius:4px}
+.empty{text-align:center;padding:32px 16px;color:var(--text3)}
+.eicon{font-size:28px;margin-bottom:8px;opacity:.4}
+.meth-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin:1px}
+.meth-sp5e{background:rgba(255,136,85,.18);color:#ff8855}
+.meth-kasi{background:rgba(25,195,178,.18);color:var(--accent2)}
+.meth-jcb{background:rgba(0,153,255,.18);color:var(--accent3)}
+.meth-scr{background:rgba(168,85,247,.18);color:var(--purple)}
+.meth-rrrp{background:rgba(255,204,0,.18);color:var(--amber)}
+.stag{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;white-space:nowrap}
+.st-open{background:rgba(255,170,0,.2);color:var(--amber)}
+.st-dispatched{background:rgba(0,153,255,.2);color:var(--accent3)}
+.st-in-progress{background:rgba(255,106,26,.2);color:var(--accent)}
+.st-complete{background:rgba(0,201,122,.2);color:var(--green)}
+.st-verified{background:rgba(25,195,178,.2);color:var(--accent2)}
+.st-warranty{background:rgba(168,85,247,.2);color:var(--purple)}
+.pci-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px}
+.pci-fill{height:100%;border-radius:3px}
+.abar-wrap{margin-bottom:7px}
+.abar-labels{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+.abar-bg{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.abar-fill{height:100%;border-radius:3px}
+.route-stop{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:5px;border:1px solid var(--border);margin-bottom:5px;background:var(--bg3)}
+.snum{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.rmc{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:6px 10px;text-align:center;min-width:60px;display:inline-block}
+.rmv{font-size:16px;font-weight:800;color:var(--accent)}
+.rml{font-size:10px;color:var(--text3);margin-top:1px}
+.crew-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;border:1px solid var(--border);margin-bottom:8px;background:var(--bg3)}
+.cav{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.opt-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.opt-row:last-child{border-bottom:none}
+.toggle{width:34px;height:18px;background:var(--border2);border-radius:9px;position:relative;cursor:pointer;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.tknob{width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;pointer-events:none;transition:left .15s}
+.toggle.on .tknob{left:18px}
+.srchwrap{position:relative;flex:1}
+.srchwrap input{padding-left:26px}
+.srchicon{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px;pointer-events:none}
+.notif{position:fixed;bottom:20px;right:20px;background:var(--bg3);border-radius:8px;padding:10px 16px;font-size:12px;z-index:9999;animation:slideUp .2s;max-width:280px;border-left:3px solid var(--green);box-shadow:0 4px 20px rgba(0,0,0,.5)}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.rrrp-card{border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px}
+.rrrp-head{background:rgba(255,204,0,.07);border-bottom:1px solid var(--border);padding:9px 12px;display:flex;justify-content:space-between;align-items:flex-start}
+.rrrp-body{padding:10px 12px}
+.map-overlay{position:absolute;top:10px;right:10px;z-index:500;display:flex;flex-direction:column;gap:5px}
+.mctrl{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;color:var(--text2)}
+.mctrl:hover{border-color:var(--accent);color:var(--accent)}
+.map-legend{background:rgba(22,27,37,.92);border:1px solid var(--border);border-radius:7px;padding:9px 11px;position:absolute;bottom:14px;left:10px;z-index:500}
+.li{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);margin-bottom:4px}
+.li:last-child{margin-bottom:0}
+.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leaflet-tile{filter:brightness(0.85) saturate(0.9)}
+.photo-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.photo-slot{border:1px dashed var(--border2);border-radius:6px;overflow:hidden;cursor:pointer}
+.photo-slot:hover{border-color:var(--accent)}
+.photo-slot.has-photo{border-style:solid;border-color:var(--border)}
+.photo-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:90px;gap:4px;color:var(--text3);font-size:11px}
+.photo-slot-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;text-align:center}
+.before-label{background:rgba(255,170,0,.15);color:var(--amber)}
+.after-label{background:rgba(0,201,122,.15);color:var(--green)}
+.photo-thumb{width:100%;height:90px;object-fit:cover;display:block}
+.photo-actions{display:flex;gap:3px;padding:4px}
+.pa-btn{flex:1;padding:3px 0;font-size:10px;font-weight:600;border-radius:3px;border:none;cursor:pointer}
+.pa-u{background:rgba(255,106,26,.15);color:var(--accent)}
+.pa-c{background:rgba(25,195,178,.15);color:var(--accent2)}
+.pa-d{background:rgba(255,79,106,.12);color:var(--red)}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:10000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain}
+.lb-close{position:absolute;top:14px;right:18px;font-size:26px;color:#fff;cursor:pointer;background:none;border:none;opacity:.7}
+input[type=file]{display:none}
+.dc-head{background:var(--bg3);padding:10px 12px;border-bottom:1px solid var(--border);border-radius:8px 8px 0 0}
+.dc-body{padding:10px 12px}
+.detail-card{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px}
+
+/* -- FOS216 LOGOMARK (white dropshadow) -- */
+.fos-logo{height:auto;flex:none;filter:drop-shadow(0 0 2px rgba(255,255,255,.95)) drop-shadow(0 0 6px rgba(255,255,255,.6)) drop-shadow(0 0 14px rgba(255,255,255,.3)) drop-shadow(0 0 30px rgba(255,199,44,.18));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+</style></head><body>
+<div id="app">
+<div class="hdr">
+  <img class="fos-logo" src="data:image/png;base64,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" alt="The FixOurStreets216 Project logo" title="The FixOurStreets216 Project" width="30" height="30" style="width:30px;display:block">
+  <div class="logo">CityCLE·RRTS <span>/ Road Repair Tracking System — Division of Streets</span></div>
+  <div class="htabs">
+    <button class="htab on" onclick="ST('map')">🗺 Map</button>
+    <button class="htab" onclick="ST('repairs')">🛣 Repairs</button>
+    <button class="htab" onclick="ST('rrrp')">🏘 RRRP</button>
+    <button class="htab" onclick="ST('routes')">⚡ Routes</button>
+    <button class="htab" onclick="ST('crews')">👷 Crews</button>
+    <button class="htab" onclick="ST('analytics')">📊 Analytics</button>
+    <button class="htab" onclick="ST('settings')">⚙ Settings</button>
+  </div>
+  <div class="hbadges">
+    <span class="bdg bdg-g">● Live</span>
+    <span class="bdg bdg-o" id="b-open">0 Open</span>
+    <span class="bdg bdg-t" id="b-rrrp">0 RRRP</span>
+    <span class="bdg bdg-a" id="b-total">0 Repairs</span>
+  </div>
+</div>
+<div class="body">
+<!-- MAP TAB -->
+<div class="pane on" id="pane-map">
+  <div class="sidebar">
+    <div class="panel"><div class="sec">Quick Stats</div><div class="stat-grid" id="qs"></div></div>
+    <div class="panel">
+      <div class="sec">Method</div>
+      <div class="filter-row" id="fm">
+        <button class="fbtn on" data-v="all" onclick="flt(this,'m')">All</button>
+        <button class="fbtn" data-v="sp5e" onclick="flt(this,'m')">SP5E</button>
+        <button class="fbtn" data-v="kasi" onclick="flt(this,'m')">Kasi IR</button>
+        <button class="fbtn" data-v="jcb"  onclick="flt(this,'m')">JCB Pro</button>
+        <button class="fbtn" data-v="scr"  onclick="flt(this,'m')">Saw Cut</button>
+        <button class="fbtn" data-v="rrrp" onclick="flt(this,'m')">RRRP</button>
+      </div>
+      <div class="sec" style="margin-top:4px">Surface</div>
+      <div class="filter-row" id="fr">
+        <button class="fbtn on" data-v="all"     onclick="flt(this,'r')">All</button>
+        <button class="fbtn" data-v="asphalt"    onclick="flt(this,'r')">🖤 Asphalt</button>
+        <button class="fbtn" data-v="concrete"   onclick="flt(this,'r')">⬜ Concrete</button>
+        <button class="fbtn" data-v="brick"      onclick="flt(this,'r')">🟥 Brick</button>
+      </div>
+      <div class="sec" style="margin-top:4px">Priority</div>
+      <div class="filter-row" id="fp">
+        <button class="fbtn on" data-v="all" onclick="flt(this,'p')">All</button>
+        <button class="fbtn" data-v="p1"    onclick="flt(this,'p')">🔴 P1</button>
+        <button class="fbtn" data-v="p2"    onclick="flt(this,'p')">🟡 P2</button>
+        <button class="fbtn" data-v="p3"    onclick="flt(this,'p')">🟢 P3</button>
+      </div>
+      <div class="sec" style="margin-top:4px">Status</div>
+      <div class="filter-row" id="fs">
+        <button class="fbtn on" data-v="all"        onclick="flt(this,'s')">All</button>
+        <button class="fbtn" data-v="open"          onclick="flt(this,'s')">Open</button>
+        <button class="fbtn" data-v="dispatched"    onclick="flt(this,'s')">Dispatched</button>
+        <button class="fbtn" data-v="in-progress"   onclick="flt(this,'s')">In Progress</button>
+        <button class="fbtn" data-v="complete"      onclick="flt(this,'s')">Complete</button>
+        <button class="fbtn" data-v="verified"      onclick="flt(this,'s')">Verified</button>
+      </div>
+    </div>
+    <div class="panel" style="padding:8px 12px">
+      <div class="srchwrap"><span class="srchicon">🔍</span>
+        <input type="text" placeholder="Search address, ID…" oninput="doSearch(this.value)">
+      </div>
+    </div>
+    <div class="lot-list" id="lot-list"></div>
+  </div>
+  <div class="maparea">
+    <div id="map"></div>
+    <div class="map-overlay">
+      <button class="mctrl" onclick="fitAll()">⊙ Fit All</button>
+      <button class="mctrl" id="sat-btn" onclick="toggleSat()">🛰 Satellite</button>
+    </div>
+    <div class="map-legend">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Method</div>
+      <div class="li"><div class="ldot" style="background:#ff8855"></div>SP5E</div>
+      <div class="li"><div class="ldot" style="background:#19c3b2"></div>Kasi IR</div>
+      <div class="li"><div class="ldot" style="background:#0099ff"></div>JCB Pro</div>
+      <div class="li"><div class="ldot" style="background:#a855f7"></div>Saw Cut</div>
+      <div class="li"><div class="ldot" style="background:#ffcc00"></div>RRRP</div>
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px">Priority Ring</div>
+      <div class="li"><div class="ldot" style="background:#ff4f6a"></div>P1</div>
+      <div class="li"><div class="ldot" style="background:#ffaa00"></div>P2</div>
+      <div class="li"><div class="ldot" style="background:#00c97a"></div>P3</div>
+    </div>
+  </div>
+  <div class="rpanel">
+    <div class="stabs">
+      <div class="stab on" onclick="SD('info')">Info</div>
+      <div class="stab" onclick="SD('photos')">Photos</div>
+      <div class="stab" onclick="SD('edit')">Edit</div>
+      <div class="stab" onclick="SD('stats')">Stats</div>
+    </div>
+    <div id="dp-info" class="scrollable">
+      <div id="detail-empty" class="empty" style="padding-top:48px"><div class="eicon">🛣</div><div>Select a repair on the map</div></div>
+      <div id="detail-content" style="display:none"></div>
+    </div>
+    <div id="dp-photos" class="scrollable" style="display:none"><div id="photos-content"></div></div>
+    <div id="dp-edit"   class="scrollable" style="display:none"><div id="edit-content"><div class="empty"><div class="eicon">✏️</div><div>Select a repair to edit</div></div></div></div>
+    <div id="dp-stats"  class="scrollable" style="display:none"><div id="stats-content" style="padding:4px 0"></div></div>
+  </div>
+</div>
+<!-- REPAIRS TAB -->
+<div class="pane" id="pane-repairs">
+  <div class="tbar">
+    <div style="font-size:13px;font-weight:700">Repair Registry <span id="reg-count" style="color:var(--text3);font-weight:400"></span></div>
+    <div class="srchwrap" style="max-width:300px"><span class="srchicon">🔍</span><input type="text" placeholder="Search…" oninput="doSearch(this.value)"></div>
+    <div style="display:flex;gap:6px;margin-left:auto">
+      <button class="btn btn-t bsm" onclick="exportCSV()">⬇ CSV</button>
+      <button class="btn btn-s bsm" onclick="exportGeoJSON()">⬇ GeoJSON</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table class="rtbl">
+      <thead><tr><th>ID</th><th>Address</th><th>Neighborhood</th><th>Surface</th><th>Method</th><th>Distress</th><th>PCI</th><th>SY</th><th>Status</th><th>Pri</th><th>Ward</th><th>Requested</th></tr></thead>
+      <tbody id="reg-body"></tbody>
+    </table>
+  </div>
+</div>
+<!-- RRRP TAB -->
+<div class="pane" id="pane-rrrp">
+  <div class="twocol">
+    <div class="tc-left">
+      <div class="panel">
+        <div class="sec">Add RRRP Block</div>
+        <div class="igroup"><div class="ilabel">Street / Block Range</div><input type="text" id="rp-street" placeholder="E.g. E 116th St — E 93rd to E 105th"></div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">Ward</div>
+            <select id="rp-ward"><option value="">—</option><option>Ward 1</option><option>Ward 2</option><option>Ward 3</option><option>Ward 4</option><option>Ward 5</option><option>Ward 6</option><option>Ward 7</option><option>Ward 8</option><option>Ward 9</option><option>Ward 10</option><option>Ward 11</option><option>Ward 12</option><option>Ward 13</option><option>Ward 14</option><option>Ward 15</option></select>
+          </div>
+          <div class="igroup"><div class="ilabel">Lane Miles</div><input type="number" id="rp-lm" min="0.1" step="0.1" placeholder="0.0"></div>
+        </div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">Current PCI</div><input type="number" id="rp-pci" min="0" max="100" placeholder="0–100"></div>
+          <div class="igroup"><div class="ilabel">Scheduled Date</div><input type="date" id="rp-date"></div>
+        </div>
+        <div class="igroup"><div class="ilabel">Rehab Method</div>
+          <select id="rp-method"><option value="mill-overlay">Mill &amp; Overlay (2")</option><option value="full-depth">Full-Depth Reclamation</option><option value="microsurface">Micro-Surfacing + Overlay</option><option value="base-repair">Base Repair + HMA</option></select>
+        </div>
+        <div class="igroup"><div class="ilabel">Estimated Cost ($)</div><input type="number" id="rp-cost" placeholder="250000"></div>
+        <div class="igroup"><div class="ilabel">Notes</div><textarea id="rp-notes" placeholder="Scope, drainage issues, utility conflicts…"></textarea></div>
+        <div class="btn-row">
+          <button class="btn btn-p" style="flex:1" onclick="addRRRP()">+ Add RRRP Block</button>
+          <button class="btn btn-s" onclick="loadSampleRRRP()">Load Samples</button>
+        </div>
+      </div>
+      <div class="panel" id="rrrp-stats"></div>
+    </div>
+    <div class="tc-right" id="rrrp-list"></div>
+  </div>
+</div>
+<!-- ROUTES TAB -->
+<div class="pane" id="pane-routes">
+  <div class="twocol">
+    <div class="tc-left">
+      <div class="panel">
+        <div class="sec">Route Settings</div>
+        <div class="igroup"><div class="ilabel">Depot (Lat / Lng)</div>
+          <div class="ig2"><input type="number" id="dep-lat" value="41.4775" step="0.0001"><input type="number" id="dep-lng" value="-81.6794" step="0.0001"></div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">Default: Cleveland Service Yard</div>
+        </div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">Algorithm</div>
+            <select id="opt-algo"><option value="nn">Nearest Neighbor</option><option value="tsp">TSP 2-Opt</option><option value="priority">Priority First</option><option value="zone">Zone Grouping</option></select>
+          </div>
+          <div class="igroup"><div class="ilabel">Assign Crew</div><select id="rt-crew"><option value="">— None —</option></select></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-p" style="flex:1" onclick="optimizeRoute()">⚡ Optimize Route</button>
+          <button class="btn btn-s bsm" onclick="addFilteredToRoute()">+ Add Filtered</button>
+          <button class="btn btn-d bsm" onclick="clearRoute()">Clear</button>
+        </div>
+      </div>
+      <div id="rt-summary" style="display:none" class="panel">
+        <div class="sec">Summary</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="rt-meta"></div>
+        <div style="margin-top:8px"><button class="btn btn-t bsm" style="width:100%" onclick="exportCSV()">⬇ Export Task Order CSV</button></div>
+      </div>
+    </div>
+    <div class="tc-right" id="rt-stops"><div class="empty"><div class="eicon">🗺</div><div>No route yet.<br>Add repairs then click Optimize.</div></div></div>
+  </div>
+</div>
+<!-- CREWS TAB -->
+<div class="pane" id="pane-crews">
+  <div class="twocol">
+    <div class="tc-left">
+      <div class="panel">
+        <div class="sec">Add Crew</div>
+        <div class="igroup"><div class="ilabel">Crew Name</div><input type="text" id="cr-name" placeholder="Crew Alpha"></div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">Specialty</div>
+            <select id="cr-spec"><option>Bergkamp SP5E</option><option>Kasi IR Patriot</option><option>JCB Pothole Pro</option><option>Saw Cut R&amp;R</option><option>RRRP Paving</option><option>Multi-Method</option></select>
+          </div>
+          <div class="igroup"><div class="ilabel">Members</div><input type="number" id="cr-cap" min="2" max="20" value="6"></div>
+        </div>
+        <div class="igroup"><div class="ilabel">Shift</div>
+          <select id="cr-shift"><option>Day (6AM–2PM)</option><option>Swing (2PM–10PM)</option><option>Night (10PM–6AM)</option></select>
+        </div>
+        <button class="btn btn-p" style="width:100%;margin-top:2px" onclick="addCrew()">+ Add Crew</button>
+      </div>
+    </div>
+    <div class="tc-right" id="crew-list"><div class="empty"><div class="eicon">👷</div><div>No crews yet.</div></div></div>
+  </div>
+</div>
+<!-- ANALYTICS TAB -->
+<div class="pane" id="pane-analytics">
+  <div style="flex:1;overflow-y:auto;padding:20px 24px">
+    <div class="sec" style="margin-bottom:14px;font-size:12px">Road Repair Program — Analytics Dashboard</div>
+    <div id="analytics-main"></div>
+  </div>
+</div>
+<!-- SETTINGS TAB -->
+<div class="pane" id="pane-settings">
+  <div class="twocol">
+    <div class="tc-left">
+      <div class="panel">
+        <div class="sec">Data Management</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-p" onclick="loadSample()">📥 Load Sample Repair Data</button>
+          <button class="btn btn-s" onclick="loadSampleRRRP()">📥 Load Sample RRRP Blocks</button>
+          <button class="btn btn-d" onclick="clearAll()">🗑 Clear All Data</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="sec">Map Options</div>
+        <div class="opt-row"><span>Route Line</span><div class="toggle on" id="tog-routes" onclick="tog(this,'routes')"><div class="tknob"></div></div></div>
+        <div class="opt-row"><span>Stop Numbers</span><div class="toggle on" id="tog-nums" onclick="tog(this,'nums')"><div class="tknob"></div></div></div>
+        <div class="opt-row"><span>Dark Tiles</span><div class="toggle on" id="tog-dark" onclick="tog(this,'dark')"><div class="tknob"></div></div></div>
+      </div>
+      <div class="panel">
+        <div class="sec">Photo Storage</div>
+        <div class="info-row"><span class="ik">Photos stored</span><span class="iv" id="db-photo-count">0</span></div>
+        <div class="info-row"><span class="ik">Storage used</span><span class="iv" id="db-storage-est">0 KB</span></div>
+        <div style="margin-top:8px"><button class="btn btn-d bsm" onclick="clearAllPhotos()">Delete All Photos</button></div>
+      </div>
+    </div>
+    <div class="tc-right">
+      <div style="max-width:560px">
+        <div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:4px">➕ Add Road Repair</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Fill in the form below to add a new repair location to the tracker.</div>
+        <div class="igroup"><div class="ilabel">Repair ID (optional — auto-generated if blank)</div><input type="text" id="np-id" placeholder="RRTS-YYYY"></div>
+        <div class="igroup"><div class="ilabel">Street Address</div><input type="text" id="np-addr" placeholder="1234 E 79th St, Cleveland, OH"></div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.5">
+          <strong style="color:var(--accent2)">Coordinates are required</strong> to place the pin on the map.<br>
+          • Click <strong style="color:var(--accent2)">📍 My Location</strong> to auto-fill your current location<br>
+          • Click <strong style="color:var(--accent2)">📍 Pick on Map</strong> to click directly on the map<br>
+          • Or type them manually below
+        </div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">Latitude</div><input type="number" id="np-lat" step="0.00001" placeholder="41.50000"></div>
+          <div class="igroup"><div class="ilabel">Longitude</div><input type="number" id="np-lng" step="0.00001" placeholder="-81.65000"></div>
+        </div>
+        <div class="btn-row" style="margin-bottom:14px">
+          <button class="btn btn-s" style="flex:1" id="np-geo" onclick="useMyLocation()">📍 My Location</button>
+          <button class="btn btn-t" style="flex:1" id="pick-btn" onclick="startPick()">📍 Pick on Map</button>
+        </div>
+        <div class="ig3">
+          <div class="igroup"><div class="ilabel">Priority</div>
+            <select id="np-pri"><option value="p1">P1 — Emergency</option><option value="p2">P2 — Urgent</option><option value="p3" selected>P3 — Routine</option></select>
+          </div>
+          <div class="igroup"><div class="ilabel">Road Surface</div>
+            <select id="np-surface"><option value="asphalt">Asphalt (HMA)</option><option value="concrete">Concrete (PCC)</option><option value="brick">Red Brick</option></select>
+          </div>
+          <div class="igroup"><div class="ilabel">Method</div>
+            <select id="np-method"><option value="jcb">JCB Pothole Pro</option><option value="kasi">Kasi IR Patriot</option><option value="sp5e">Bergkamp SP5E</option><option value="scr">Saw Cut R&amp;R</option><option value="rrrp">RRRP</option></select>
+          </div>
+        </div>
+        <div class="igroup"><div class="ilabel">Distress Type</div><input type="text" id="np-type" placeholder="Pothole, Joint Spall, Brick Displacement, Alligator Cracking…"></div>
+        <div class="ig2">
+          <div class="igroup"><div class="ilabel">PCI (0–100)</div><input type="number" id="np-pci" min="0" max="100" placeholder="0–100"></div>
+          <div class="igroup"><div class="ilabel">Area (sq yards)</div><input type="number" id="np-area" min="1" placeholder="e.g. 25"></div>
+        </div>
+        <div class="igroup"><div class="ilabel">Field Notes</div><textarea id="np-notes" placeholder="Condition details, utility conflicts, repeat repair history…"></textarea></div>
+        <button class="btn btn-p" style="width:100%;padding:11px;font-size:13px;margin-top:4px" onclick="addLot()">+ Add Repair to Tracker</button>
+        <button class="btn btn-s" style="width:100%;margin-top:6px" onclick="clearForm()">Clear Form</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+<div class="lightbox" id="lightbox" onclick="closeLB()">
+  <button class="lb-close" onclick="closeLB()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div style="color:var(--text2);font-size:12px;text-align:center" id="lb-cap"></div>
+</div>
+<input type="file" id="file-before"     accept="image/*"                onchange="handleFile(event,'before')">
+<input type="file" id="file-after"      accept="image/*"                onchange="handleFile(event,'after')">
+<input type="file" id="file-cam-before" accept="image/*" capture="environment" onchange="handleFile(event,'before')">
+<input type="file" id="file-cam-after"  accept="image/*" capture="environment" onchange="handleFile(event,'after')">
+<script>
+// STATE
+let lots=[],crews=[],routeStops=[],rrrpBlocks=[],selId=null;
+let map,markers={},routeLine=null,depotMk=null,pickMode=false;
+let tile1,tile2,usingSat=false;
+let AF={m:'all',r:'all',p:'all',s:'all'},SQ='';
+let MS={routes:true,nums:true,dark:true};
+let photoCache={};
+
+// INDEXEDDB
+let DB=null;
+function initDB(){return new Promise((res,rej)=>{const req=indexedDB.open('CityCLE_RRTS_v2',1);req.onupgradeneeded=e=>{e.target.result.createObjectStore('photos',{keyPath:'id'});};req.onsuccess=e=>{DB=e.target.result;res();};req.onerror=rej;});}
+function dbGet(id){return new Promise((res,rej)=>{const tx=DB.transaction('photos','readonly');const r=tx.objectStore('photos').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=rej;});}
+function dbPut(o){return new Promise((res,rej)=>{const tx=DB.transaction('photos','readwrite');const r=tx.objectStore('photos').put(o);r.onsuccess=()=>res();r.onerror=rej;});}
+function dbDel(id){return new Promise((res,rej)=>{const tx=DB.transaction('photos','readwrite');const r=tx.objectStore('photos').delete(id);r.onsuccess=()=>res();r.onerror=rej;});}
+function dbAll(){return new Promise((res,rej)=>{const tx=DB.transaction('photos','readonly');const r=tx.objectStore('photos').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=rej;});}
+
+// PHOTOS
+function resizeImg(file,mw,mh,q){return new Promise(res=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{let w=img.width,h=img.height;if(w>mw){h=Math.round(h*mw/w);w=mw;}if(h>mh){w=Math.round(w*mh/h);h=mh;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',q||.82));};img.src=url;});}
+async function loadPhotos(id){if(!DB)return;const r=await dbGet(id);photoCache[id]=r||{id,before:null,after:null};}
+async function savePhoto(id,type,file){if(!DB)return;const data=await resizeImg(file,1200,900,.82);if(!photoCache[id])photoCache[id]={id,before:null,after:null};photoCache[id][type]={data,ts:new Date().toISOString(),name:file.name};await dbPut(photoCache[id]);refreshPhotoUI(id);updatePhotoBadge();refreshIcon(id);notify((type==='before'?'Condition':'Repaired')+' photo saved','green');}
+async function delPhoto(id,type){if(!photoCache[id])return;photoCache[id][type]=null;if(!photoCache[id].before&&!photoCache[id].after){await dbDel(id);delete photoCache[id];}else await dbPut(photoCache[id]);refreshPhotoUI(id);updatePhotoBadge();refreshIcon(id);notify('Photo deleted','red');}
+function hasPhotos(id){const r=photoCache[id];return r&&(r.before||r.after);}
+function photoSt(id){const r=photoCache[id];if(!r||(!r.before&&!r.after))return'none';if(r.before&&r.after)return'both';return r.before?'before':'after';}
+async function updatePhotoBadge(){const all=await dbAll();const n=all.reduce((s,r)=>(r.before?1:0)+(r.after?1:0)+s,0);sS('db-photo-count',''+n);let b=all.reduce((s,r)=>{if(r.before)s+=r.before.data.length*.75;if(r.after)s+=r.after.data.length*.75;return s;},0);sS('db-storage-est',b>1048576?'~'+(b/1048576).toFixed(1)+' MB':'~'+(b/1024).toFixed(0)+' KB');}
+function refreshPhotoUI(id){if(selId===id){const l=lots.find(x=>x.id===id);if(l)renderDetail(l);}if(document.getElementById('dp-photos').style.display!=='none')renderPhotosTab();}
+let _pLot=null,_pType=null;
+function trigUp(id,type,cam){_pLot=id;_pType=type;document.getElementById(cam?(type==='before'?'file-cam-before':'file-cam-after'):(type==='before'?'file-before':'file-after')).click();}
+async function handleFile(e,type){const f=e.target.files[0];if(!f||!_pLot)return;e.target.value='';notify('Processing…','blue');await savePhoto(_pLot,type,f);_pLot=null;}
+function photoSlot(id,type){const r=photoCache[id];const p=r&&r[type];const lbl=type==='before'?'Condition':'Repaired';const lc=type==='before'?'before-label':'after-label';
+  if(p)return'<div class="photo-slot has-photo"><div class="photo-slot-label '+lc+'">'+lbl+'</div><img class="photo-thumb" src="'+p.data+'" onclick="openLB(\''+id+'\',\''+type+'\')" style="cursor:zoom-in"><div style="padding:0 6px 4px;font-size:10px;color:var(--text3)">'+p.name.slice(0,22)+'</div><div class="photo-actions"><button class="pa-btn pa-u" onclick="trigUp(\''+id+'\',\''+type+'\',false)">&#8593; Replace</button><button class="pa-btn pa-d" onclick="delPhoto(\''+id+'\',\''+type+'\')">&#x2715;</button></div></div>';
+  return'<div class="photo-slot" onclick="trigUp(\''+id+'\',\''+type+'\',false)"><div class="photo-slot-label '+lc+'">'+lbl+'</div><div class="photo-placeholder"><div style="font-size:20px;opacity:.4">'+(type==='before'?'📷':'✅')+'</div><div>Tap to upload</div></div><div class="photo-actions"><button class="pa-btn pa-u" onclick="event.stopPropagation();trigUp(\''+id+'\',\''+type+'\',false)">&#128193; File</button><button class="pa-btn pa-c" onclick="event.stopPropagation();trigUp(\''+id+'\',\''+type+'\',true)">&#128247; Camera</button></div></div>';}
+function openLB(id,type){const r=photoCache[id];if(!r||!r[type])return;const l=lots.find(x=>x.id===id);document.getElementById('lb-img').src=r[type].data;document.getElementById('lb-cap').textContent=(type==='before'?'CONDITION':'REPAIRED')+' — '+(l?l.address:id);document.getElementById('lightbox').classList.add('open');}
+function closeLB(){document.getElementById('lightbox').classList.remove('open');}
+async function renderPhotosTab(){const el=document.getElementById('photos-content');const all=await dbAll();const wP=all.filter(r=>lots.find(l=>l.id===r.id)&&(r.before||r.after));if(!wP.length){el.innerHTML='<div class="empty"><div class="eicon">📸</div><div>No photos yet.</div></div>';return;}el.innerHTML=wP.map(r=>{const l=lots.find(x=>x.id===r.id)||{};return'<div style="border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px"><div style="background:var(--bg4);padding:7px 10px;font-size:12px;font-weight:600">'+(l.address||r.id)+'</div><div class="photo-pair">'+photoSlot(r.id,'before')+photoSlot(r.id,'after')+'</div></div>';}).join('');}
+async function clearAllPhotos(){if(!confirm('Delete ALL photos?'))return;const all=await dbAll();for(const r of all)await dbDel(r.id);photoCache={};refreshMarkers();updatePhotoBadge();renderPhotosTab();if(selId){const l=lots.find(x=>x.id===selId);if(l)renderDetail(l);}notify('All photos deleted','red');}
+
+// DATA CONSTANTS
+const WARD={Tremont:7,'Ohio City':7,Glenville:9,'Clark-Fulton':14,Collinwood:10,Hough:8,'West Park':15,'Slavic Village':3,'Detroit Shoreway':11,'Buckeye-Woodhill':6,'Brooklyn Centre':14,'Lee-Harvard':1,Kinsman:5,'Mount Pleasant':3,'Old Brooklyn':4,'University Circle':6,'St. Clair-Superior':10,Cudell:12,"Kamm's Corners":15};
+const MM={sp5e:{label:'Bergkamp SP5E',abbr:'SP5E',color:'#ff8855',cls:'meth-sp5e'},kasi:{label:'Kasi IR Patriot',abbr:'Kasi IR',color:'#19c3b2',cls:'meth-kasi'},jcb:{label:'JCB Pothole Pro',abbr:'JCB Pro',color:'#0099ff',cls:'meth-jcb'},scr:{label:'Saw Cut R&R',abbr:'Saw Cut',color:'#a855f7',cls:'meth-scr'},rrrp:{label:'RRRP Full Rehab',abbr:'RRRP',color:'#ffcc00',cls:'meth-rrrp'}};
+const SM={asphalt:{label:'Asphalt (HMA)',abbr:'HMA',color:'#888888'},concrete:{label:'Concrete (PCC)',abbr:'PCC',color:'#c8c8c8'},brick:{label:'Red Brick',abbr:'Brick',color:'#c0392b'}};
+const SURF_NBR={Tremont:'brick','Ohio City':'brick',Glenville:'asphalt','Clark-Fulton':'asphalt',Collinwood:'asphalt',Hough:'asphalt','West Park':'concrete','Slavic Village':'brick','Detroit Shoreway':'brick','Buckeye-Woodhill':'asphalt','Brooklyn Centre':'concrete','Lee-Harvard':'asphalt',Kinsman:'asphalt','Mount Pleasant':'asphalt','Old Brooklyn':'concrete','University Circle':'brick','St. Clair-Superior':'brick',Cudell:'concrete',"Kamm's Corners":'concrete'};
+const DIST_SURF={asphalt:['Pothole','Alligator Cracking','Longitudinal Cracking','Rutting','Raveling','Surface Oxidation'],concrete:['Joint Spalling','Corner Break','Map Cracking','Faulting','D-Cracking','Panel Settlement'],brick:['Brick Displacement','Mortar Erosion','Brick Fracture','Heaving / Frost Uplift','Sand Base Washout','Surface Depression']};
+const ADDRS=[['3317 W 25th St','Cleveland',41.4721,-81.7023,'Tremont'],['1234 E 79th St','Cleveland',41.5042,-81.6322,'Glenville'],['4501 Lorain Ave','Cleveland',41.4785,-81.7197,'Ohio City'],['892 E 93rd St','Cleveland',41.5087,-81.6122,'Glenville'],['2218 W 44th St','Cleveland',41.4799,-81.7198,'Clark-Fulton'],['6234 St Clair Ave','Cleveland',41.5354,-81.5990,'Collinwood'],['1544 E 55th St','Cleveland',41.4901,-81.6588,'Hough'],['3892 W 130th St','Cleveland',41.4721,-81.7543,'West Park'],['712 E 152nd St','Cleveland',41.5477,-81.5677,'Collinwood'],['2189 Fulton Rd','Cleveland',41.4712,-81.7013,'Clark-Fulton'],['4430 Harvard Ave','Cleveland',41.4423,-81.6678,'Slavic Village'],['881 E 105th St','Cleveland',41.5120,-81.6044,'Glenville'],['3211 W 65th St','Cleveland',41.4788,-81.7321,'Detroit Shoreway'],['1876 Buckeye Rd','Cleveland',41.4489,-81.6423,'Buckeye-Woodhill'],['5540 Quincy Ave','Cleveland',41.4612,-81.6234,'Slavic Village'],['923 E 131st St','Cleveland',41.5167,-81.5734,'Collinwood'],['2767 W 25th St','Cleveland',41.4623,-81.7045,'Clark-Fulton'],['3344 E 116th St','Cleveland',41.5143,-81.5989,'Glenville'],['1256 W 58th St','Cleveland',41.4812,-81.7283,'Brooklyn Centre'],['4102 Superior Ave','Cleveland',41.5123,-81.6312,'Hough'],['6778 Kinsman Rd','Cleveland',41.4392,-81.6178,'Lee-Harvard'],['388 E 99th St','Cleveland',41.5067,-81.6089,'Glenville'],['2981 Daisy Ave','Cleveland',41.4534,-81.6867,'Clark-Fulton'],['5023 Woodland Ave','Cleveland',41.4456,-81.6412,'Kinsman'],['765 Alhambra Rd','Cleveland',41.4678,-81.6789,'Mount Pleasant'],['3456 Lee Rd','Cleveland',41.4534,-81.5934,'Lee-Harvard'],['1890 E 71st St','Cleveland',41.4956,-81.6423,'Hough'],['4321 Memphis Ave','Cleveland',41.4567,-81.7189,'Old Brooklyn'],['678 Ansel Rd','Cleveland',41.5012,-81.6678,'University Circle'],['2345 E 131st St','Cleveland',41.5178,-81.5745,'Collinwood'],['890 W 73rd St','Cleveland',41.4789,-81.7312,'Brooklyn Centre'],['3678 Denison Ave','Cleveland',41.4534,-81.7123,'Clark-Fulton'],['1567 E 89th St','Cleveland',41.5034,-81.6234,'Glenville'],['4890 Broadview Rd','Cleveland',41.4312,-81.7012,'Old Brooklyn'],['2234 Harvard Ave','Cleveland',41.4456,-81.6589,'Slavic Village'],['567 E 120th St','Cleveland',41.5156,-81.5912,'Collinwood'],['3901 W 130th St','Cleveland',41.4634,-81.7567,'West Park'],['1234 Buckeye Rd','Cleveland',41.4478,-81.6345,'Buckeye-Woodhill'],['4567 Lorain Ave','Cleveland',41.4801,-81.7234,'Ohio City'],['789 E 55th St','Cleveland',41.4912,-81.6567,'Hough']];
+const METHS=['sp5e','kasi','jcb','jcb','scr','rrrp'];
+const PCI_M={sp5e:[75,80,85,90,95],kasi:[55,60,65,70,75],jcb:[35,40,45,50,55],scr:[20,25,30,35,40],rrrp:[30,35,40,45,50]};
+const NOTES_M={sp5e:['Surface oxidation confirmed via deflectograph','Raveling noted along gutter','Block section treated per preventive schedule'],kasi:['Infrared recycling — 3 panel passes required','Utility restoration complete','Depression from prior pothole repair settled'],jcb:['311 complaint received','Reported by crew on patrol','Winter damage — freeze-thaw cycle','3rd repeat repair — escalate to SCR'],scr:['Base failure confirmed — 6" depth required','Alligator cracking >25% area','Subgrade saturated — fabric + base replacement'],rrrp:['2025 RRRP — Residential Priority List','Citizen petition submitted','ODOT Urban Paving co-fund']};
+const STATUSES=['open','open','open','dispatched','dispatched','in-progress','in-progress','complete','complete','verified','warranty'];
+const RRRP_S=[{street:'E 116th St (Union Ave — St Clair Ave)',ward:'Ward 9',lm:0.8,pci:32,date:'2025-07-14',method:'mill-overlay',cost:210000,status:'scheduled',pctDone:0,notes:'Combined with WPC water main relining'},{street:'Kinsman Rd (E 131st — E 143rd)',ward:'Ward 5',lm:1.2,pci:28,date:'2025-06-30',method:'full-depth',cost:680000,status:'in-progress',pctDone:45,notes:'Base failure confirmed — full depth required'},{street:'W 25th St (Denison — I-71 Service)',ward:'Ward 14',lm:0.6,pci:41,date:'2025-08-04',method:'microsurface',cost:145000,status:'planned',pctDone:0,notes:'ODOT Urban Paving co-fund approved'},{street:'Harvard Ave (E 55th — E 79th)',ward:'Ward 6',lm:1.5,pci:38,date:'2025-09-08',method:'mill-overlay',cost:390000,status:'planned',pctDone:0,notes:'Slavic Village neighborhood request'},{street:'E 93rd St (Union — Harvard)',ward:'Ward 5',lm:0.9,pci:25,date:'2025-07-21',method:'base-repair',cost:310000,status:'scheduled',pctDone:0,notes:'Subgrade issues from water main break 2024'},{street:'Lorain Ave (W 44th — W 58th)',ward:'Ward 11',lm:0.7,pci:44,date:'2025-10-06',method:'mill-overlay',cost:183000,status:'planned',pctDone:0,notes:'Detroit Shoreway corridor plan'},{street:'E 152nd St (St. Clair — Ivanhoe)',ward:'Ward 10',lm:1.0,pci:30,date:'2025-07-28',method:'full-depth',cost:520000,status:'in-progress',pctDone:20,notes:'Collinwood priority — heavy bus route'},{street:'Memphis Ave (W 48th — Broadview)',ward:'Ward 4',lm:1.3,pci:35,date:'2025-08-18',method:'mill-overlay',cost:338000,status:'planned',pctDone:0,notes:'Old Brooklyn neighborhood priority 1'}];
+
+// HELPERS
+function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+function rndR(a,b){return a+Math.random()*(b-a);}
+function sS(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function sI(id,h){const el=document.getElementById(id);if(el)el.innerHTML=h;}
+function pCol(p){return p==='p1'?'#ff4f6a':p==='p2'?'#ffaa00':'#00c97a';}
+function pciCol(v){return v>=85?'#00c97a':v>=70?'#4caf50':v>=50?'#ffaa00':v>=35?'#ff6b35':'#ff4f6a';}
+const STL={open:'Open',dispatched:'Dispatched','in-progress':'In Progress',complete:'Complete',verified:'Verified',warranty:'Warranty'};
+function stL(s){return STL[s]||s;}
+function mB(m){const mm=MM[m]||{abbr:m,cls:'meth-jcb'};return'<span class="meth-badge '+mm.cls+'">'+mm.abbr+'</span>';}
+function sB(s){const sm=SM[s]||SM.asphalt;return'<span class="meth-badge" style="background:'+sm.color+'22;color:'+sm.color+';border:1px solid '+sm.color+'55">'+sm.abbr+'</span>';}
+function bar(label,val,total,color){const pct=total?Math.round(val/total*100):0;return'<div class="abar-wrap"><div class="abar-labels"><span>'+label+'</span><span>'+val+' <span style="color:var(--text3)">('+pct+'%)</span></span></div><div class="abar-bg"><div class="abar-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div>';}
+function dl(content,type,name){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();}
+
+// SEED
+function genLots(addrs){
+  return addrs.map((a,i)=>{
+    const method=METHS[i%METHS.length];
+    const pci=rnd(PCI_M[method]);
+    const priority=pci<40?'p1':pci<65?'p2':'p3';
+    const surface=SURF_NBR[a[4]]||'asphalt';
+    const distress=rnd(DIST_SURF[surface]);
+    const area=Math.round(rndR(method==='sp5e'?200:method==='rrrp'?500:10,method==='sp5e'?800:method==='rrrp'?2000:100));
+    const rd=new Date(2025,2+Math.floor(i/8),1+Math.floor(rndR(0,28)));
+    const cd=new Date(rd.getTime()+rndR(1,30)*864e5);
+    return{id:'RRTS-'+String(1000+i).padStart(4,'0'),method,surface,
+      address:a[0]+', '+a[1]+', OH',lat:a[2]+(Math.random()-.5)*.002,lng:a[3]+(Math.random()-.5)*.003,
+      neighborhood:a[4],ward:'Ward '+(WARD[a[4]]||Math.ceil(Math.random()*15)),
+      priority,status:rnd(STATUSES),distressType:distress,pci,areaSY:area,
+      reportSource:rnd(['311 Call','Crew Inspection','Resident Complaint','Ward Council','SeeClickFix']),
+      requestDate:rd.toISOString().slice(0,10),estCompDate:cd.toISOString().slice(0,10),
+      completedDate:'',assignedCrew:null,inRoute:false,zone:'Zone '+Math.floor(i/8+1),
+      notes:rnd(NOTES_M[method]),
+      estimatedHours:+rndR(method==='sp5e'?4:method==='rrrp'?16:0.3,method==='sp5e'?12:method==='rrrp'?48:4).toFixed(1),
+      costEst:Math.round(area*(method==='sp5e'?2.5:method==='kasi'?8:method==='jcb'?45:method==='scr'?85:120))};
+  });
+}
+
+// MAP
+function initMap(){
+  map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([41.4993,-81.6944],12);
+  tile1=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'}).addTo(map);
+  tile2=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'});
+  map.on('click',e=>{if(pickMode){capturePick(e);return;}selId=null;renderDetail(null);refreshMarkers();});
+}
+function makeIcon(lot,num){
+  const hp=hasPhotos(lot.id);const c=lot.inRoute?'#0099ff':MM[lot.method]?.color||'#888';
+  const sel=lot.id===selId;const pr=pCol(lot.priority);
+  const nL=MS.nums&&num?'<text x="12" y="16" text-anchor="middle" fill="#fff" font-size="8" font-weight="800">'+num+'</text>':'';
+  const pd=hp?'<circle cx="20" cy="4" r="4" fill="#a855f7" stroke="#0f1117" stroke-width="1.5"/>':'';
+  return L.divIcon({className:'',iconSize:[26,28],iconAnchor:[12,28],
+    html:'<svg width="26" height="28" viewBox="0 0 26 28" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.5 12 16 12 16S24 20.5 24 12C24 5.37 18.63 0 12 0z" fill="'+c+'" stroke="'+(sel?'#fff':pr)+'" stroke-width="'+(sel?2.5:2)+'" opacity=".94"/><circle cx="12" cy="12" r="4.5" fill="rgba(0,0,0,.3)"/>'+nL+pd+'</svg>'});}
+function refreshMarkers(){
+  const fl=filtered();const fs=new Set(fl.map(l=>l.id));
+  lots.forEach(l=>{if(markers[l.id]){map.removeLayer(markers[l.id]);delete markers[l.id];}if(!fs.has(l.id))return;
+    const ri=routeStops.findIndex(s=>s.id===l.id);
+    const m=L.marker([l.lat,l.lng],{icon:makeIcon(l,ri>=0?ri+1:null)});
+    m.on('click',e=>{e.originalEvent.stopPropagation();selectLot(l.id);});
+    m.addTo(map);markers[l.id]=m;});
+  renderLotList();updateStats();}
+function refreshIcon(id){if(!markers[id])return;const l=lots.find(x=>x.id===id);if(!l)return;const ri=routeStops.findIndex(s=>s.id===id);markers[id].setIcon(makeIcon(l,ri>=0?ri+1:null));}
+function fitAll(){if(!lots.length)return;map.fitBounds(L.latLngBounds(lots.map(l=>[l.lat,l.lng])),{padding:[40,40]});}
+function toggleSat(){if(usingSat){map.removeLayer(tile2);tile1.addTo(map);document.getElementById('sat-btn').textContent='🛰 Satellite';}else{map.removeLayer(tile1);tile2.addTo(map);document.getElementById('sat-btn').textContent='🗺 Street';}usingSat=!usingSat;}
+function startPick(){pickMode=true;document.getElementById('pick-btn').textContent='📍 Click the map…';ST('map');notify('Click anywhere on the map to set coordinates','blue');}
+function capturePick(e){document.getElementById('np-lat').value=e.latlng.lat.toFixed(5);document.getElementById('np-lng').value=e.latlng.lng.toFixed(5);pickMode=false;document.getElementById('pick-btn').textContent='📍 Pick on Map';ST('settings');notify('Coordinates set — finish filling the form and click Add Repair','green');}
+function tog(el,key){el.classList.toggle('on');MS[key]=el.classList.contains('on');if(key==='routes'){if(routeLine)routeLine.setStyle({opacity:MS.routes?.75:0});if(depotMk)depotMk.setOpacity(MS.routes?1:0);}if(key==='dark')document.querySelectorAll('.leaflet-tile').forEach(t=>t.style.filter=MS.dark?'brightness(0.85) saturate(0.9)':'none');if(key==='nums')refreshMarkers();}
+
+// FILTER
+function filtered(){return lots.filter(l=>{if(AF.m!=='all'&&l.method!==AF.m)return false;if(AF.r!=='all'&&(l.surface||'asphalt')!==AF.r)return false;if(AF.p!=='all'&&l.priority!==AF.p)return false;if(AF.s!=='all'&&l.status!==AF.s)return false;if(SQ){const q=SQ.toLowerCase();if(!l.address.toLowerCase().includes(q)&&!l.id.toLowerCase().includes(q)&&!l.neighborhood.toLowerCase().includes(q)&&!l.distressType.toLowerCase().includes(q))return false;}return true;});}
+function flt(btn,type){const pid={m:'fm',r:'fr',p:'fp',s:'fs'}[type];document.querySelectorAll('#'+pid+' .fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');AF[type]=btn.dataset.v;refreshMarkers();}
+function doSearch(q){SQ=q;refreshMarkers();}
+
+// LOT LIST + REGISTRY
+function renderLotList(){
+  const fl=filtered();sS('reg-count','('+fl.length+')');
+  const el=document.getElementById('lot-list');if(!el)return;
+  if(!fl.length){el.innerHTML='<div class="empty"><div>No repairs match filters</div></div>';return;}
+  el.innerHTML=fl.map(l=>'<div class="lot-item'+(l.id===selId?' sel':'')+'" onclick="selectLot(\''+l.id+'\')">'+'<div class="lh"><span class="lid">'+l.address.split(',')[0]+'</span><div style="display:flex;align-items:center;gap:4px"><span class="stag st-'+l.status+'">'+stL(l.status)+'</span><div style="width:8px;height:8px;border-radius:50%;background:'+pCol(l.priority)+';flex-shrink:0"></div></div></div><div class="lmeta" style="margin-bottom:2px">'+mB(l.method)+' '+sB(l.surface||'asphalt')+' · '+l.neighborhood+'</div><div style="font-size:10px;color:var(--text3);font-family:monospace">'+l.id+' · PCI '+l.pci+(l.inRoute?'<span style="color:var(--accent);margin-left:6px">✓ Route</span>':'')+'</div></div>').join('');
+  renderRegistry();}
+function renderRegistry(){
+  const fl=filtered();const el=document.getElementById('reg-body');if(!el)return;
+  el.innerHTML=fl.map(l=>'<tr class="'+(l.id===selId?'sel-row':'')+'" onclick="selectLot(\''+l.id+'\');ST(\'map\')"><td style="font-family:monospace;font-size:10px;color:var(--accent3)">'+l.id+'</td><td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l.address.split(',')[0]+'</td><td style="color:var(--text3)">'+l.neighborhood+'</td><td>'+sB(l.surface||'asphalt')+'</td><td>'+mB(l.method)+'</td><td style="max-width:140px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l.distressType+'</td><td><span style="color:'+pciCol(l.pci)+';font-weight:700">'+l.pci+'</span></td><td style="color:var(--text2)">'+l.areaSY+'</td><td><span class="stag st-'+l.status+'">'+stL(l.status)+'</span></td><td><span style="color:'+pCol(l.priority)+';font-weight:700">'+l.priority.toUpperCase()+'</span></td><td style="color:var(--text3)">'+l.ward+'</td><td style="color:var(--text3);font-size:11px">'+l.requestDate+'</td></tr>').join('');}
+
+// STATS
+function updateStats(){
+  const open=lots.filter(l=>l.status==='open').length;
+  const p1=lots.filter(l=>l.priority==='p1').length;
+  const done=lots.filter(l=>l.status==='complete'||l.status==='verified').length;
+  sI('qs','<div class="stat-card"><div class="sv r">'+p1+'</div><div class="sl">P1 Emergency</div></div><div class="stat-card"><div class="sv a">'+open+'</div><div class="sl">Open</div></div><div class="stat-card"><div class="sv g">'+done+'</div><div class="sl">Completed</div></div><div class="stat-card"><div class="sv c">'+routeStops.length+'</div><div class="sl">In Route</div></div>');
+  sS('b-open',open+' Open');sS('b-total',lots.length+' Repairs');}
+
+// DETAIL
+async function selectLot(id){const prev=selId;selId=id;if(prev)refreshIcon(prev);refreshIcon(id);await loadPhotos(id);const l=lots.find(x=>x.id===id);if(l){renderDetail(l);map.panTo([l.lat,l.lng]);}renderLotList();SD('info');}
+function renderDetail(lot){
+  const empty=document.getElementById('detail-empty');const content=document.getElementById('detail-content');
+  if(!lot){empty.style.display='block';content.style.display='none';return;}
+  empty.style.display='none';content.style.display='block';
+  const mm=MM[lot.method]||{};const pct=lot.pci||0;
+  content.innerHTML='<div class="detail-card"><div class="dc-head"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><div><div style="font-weight:700;font-size:13px">'+lot.address+'</div><div style="font-size:11px;color:var(--text3);margin-top:2px">'+lot.neighborhood+' · '+lot.ward+'</div></div><div style="font-size:11px;font-weight:800;color:'+pCol(lot.priority)+'">'+lot.priority.toUpperCase()+'</div></div><div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px">'+mB(lot.method)+sB(lot.surface||'asphalt')+'<span class="stag st-'+lot.status+'">'+stL(lot.status)+'</span></div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:var(--text3)">PCI</span><span style="font-weight:700;color:'+pciCol(pct)+'">'+pct+'</span></div><div class="pci-bar"><div class="pci-fill" style="width:'+pct+'%;background:'+pciCol(pct)+'"></div></div></div><div class="dc-body"><div class="info-row"><span class="ik">Repair ID</span><span class="iv" style="color:var(--accent2);font-family:monospace;font-size:11px">'+lot.id+'</span></div><div class="info-row"><span class="ik">Road Surface</span><span class="iv">'+sB(lot.surface||'asphalt')+'</span></div><div class="info-row"><span class="ik">Method</span><span class="iv">'+(mm.label||lot.method)+'</span></div><div class="info-row"><span class="ik">Distress</span><span class="iv">'+lot.distressType+'</span></div><div class="info-row"><span class="ik">Area</span><span class="iv">'+lot.areaSY+' SY</span></div><div class="info-row"><span class="ik">Est. Cost</span><span class="iv">$'+(lot.costEst||0).toLocaleString()+'</span></div><div class="info-row"><span class="ik">Source</span><span class="iv">'+lot.reportSource+'</span></div><div class="info-row"><span class="ik">Requested</span><span class="iv">'+lot.requestDate+'</span></div><div class="info-row"><span class="ik">Est. Completion</span><span class="iv">'+(lot.estCompDate||'—')+'</span></div><div class="info-row"><span class="ik">Est. Hours</span><span class="iv">'+lot.estimatedHours+'h</span></div><div class="info-row"><span class="ik">Assigned Crew</span><span class="iv">'+(lot.assignedCrew||'—')+'</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><div class="ilabel">Notes</div><div style="font-size:12px;color:var(--text2);line-height:1.5;margin-top:4px">'+(lot.notes||'—')+'</div></div><div class="photo-pair">'+photoSlot(lot.id,'before')+photoSlot(lot.id,'after')+'</div><div class="btn-row" style="margin-top:12px"><button class="btn btn-p bsm" style="flex:1" onclick="addToRoute(\''+lot.id+'\')">Add to Route</button><button class="btn btn-s bsm" onclick="SD(\'edit\')">✏ Edit</button><button class="btn btn-d bsm" onclick="delLot(\''+lot.id+'\')">✕</button></div><div style="margin-top:8px"><a href="https://www.google.com/maps?q=&layer=c&cbll='+lot.lat+','+lot.lng+'" target="_blank" style="font-size:11px;color:var(--accent3);text-decoration:none">↗ Street View</a></div></div></div>';
+  renderEditPanel(lot);}
+function renderEditPanel(lot){
+  sI('edit-content','<div style="padding:4px 0"><div class="sec">Edit — '+lot.id+'</div><div class="igroup"><div class="ilabel">Status</div><select onchange="upd(\''+lot.id+'\',\'status\',this.value)">'+['open','dispatched','in-progress','complete','verified','warranty'].map(s=>'<option value="'+s+'"'+(s===lot.status?' selected':'')+'>'+stL(s)+'</option>').join('')+'</select></div><div class="igroup"><div class="ilabel">Priority</div><select onchange="upd(\''+lot.id+'\',\'priority\',this.value)"><option value="p1"'+(lot.priority==='p1'?' selected':'')+'>P1 — Emergency</option><option value="p2"'+(lot.priority==='p2'?' selected':'')+'>P2 — Urgent</option><option value="p3"'+(lot.priority==='p3'?' selected':'')+'>P3 — Routine</option></select></div><div class="igroup"><div class="ilabel">Road Surface</div><select onchange="upd(\''+lot.id+'\',\'surface\',this.value)">'+Object.entries(SM).map(([k,v])=>'<option value="'+k+'"'+((lot.surface||'asphalt')===k?' selected':'')+'>'+v.label+'</option>').join('')+'</select></div><div class="igroup"><div class="ilabel">Method</div><select onchange="upd(\''+lot.id+'\',\'method\',this.value)">'+Object.entries(MM).map(([k,v])=>'<option value="'+k+'"'+(k===lot.method?' selected':'')+'>'+v.label+'</option>').join('')+'</select></div><div class="ig2"><div class="igroup"><div class="ilabel">PCI</div><input type="number" min="0" max="100" value="'+lot.pci+'" onchange="upd(\''+lot.id+'\',\'pci\',+this.value)"></div><div class="igroup"><div class="ilabel">Area (SY)</div><input type="number" min="1" value="'+lot.areaSY+'" onchange="upd(\''+lot.id+'\',\'areaSY\',+this.value)"></div></div><div class="igroup"><div class="ilabel">Assigned Crew</div><select onchange="upd(\''+lot.id+'\',\'assignedCrew\',this.value||null)"><option value="">— Unassigned —</option>'+crews.map(c=>'<option value="'+c.name+'"'+(lot.assignedCrew===c.name?' selected':'')+'>'+c.name+'</option>').join('')+'</select></div><div class="igroup"><div class="ilabel">Completion Date</div><input type="date" value="'+(lot.completedDate||'')+'" onchange="upd(\''+lot.id+'\',\'completedDate\',this.value)"></div><div class="igroup"><div class="ilabel">Notes</div><textarea onchange="upd(\''+lot.id+'\',\'notes\',this.value)">'+(lot.notes||'')+'</textarea></div><button class="btn btn-t" style="width:100%" onclick="SD(\'info\')">← Back to Info</button></div>');}
+function upd(id,field,value){const l=lots.find(x=>x.id===id);if(!l)return;l[field]=value;refreshIcon(id);if(selId===id)renderDetail(l);renderLotList();updateStats();notify(field+' updated','green');}
+
+// ANALYTICS
+function renderAnalytics(){
+  const n=lots.length;if(!n)return;
+  const bM={};Object.keys(MM).forEach(k=>bM[k]=0);lots.forEach(l=>bM[l.method]=(bM[l.method]||0)+1);
+  const bP={p1:0,p2:0,p3:0};lots.forEach(l=>bP[l.priority]++);
+  const bSt={};lots.forEach(l=>bSt[l.status]=(bSt[l.status]||0)+1);
+  const bSu={asphalt:0,concrete:0,brick:0};lots.forEach(l=>bSu[l.surface||'asphalt']++);
+  const bW={};lots.forEach(l=>bW[l.ward]=(bW[l.ward]||0)+1);
+  const topW=Object.entries(bW).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const totalCost=lots.reduce((s,l)=>s+(l.costEst||0),0);
+  const avgPCI=Math.round(lots.reduce((s,l)=>s+l.pci,0)/n);
+  const totalSY=lots.reduce((s,l)=>s+(l.areaSY||0),0);
+  const html='<div class="stat-grid" style="margin-bottom:14px"><div class="stat-card"><div class="sv c">'+n+'</div><div class="sl">Total Repairs</div></div><div class="stat-card"><div class="sv a">'+avgPCI+'</div><div class="sl">Avg PCI</div></div><div class="stat-card"><div class="sv b">'+totalSY.toLocaleString()+'</div><div class="sl">Total SY</div></div><div class="stat-card"><div class="sv t">$'+(totalCost/1e6).toFixed(2)+'M</div><div class="sl">Est. Cost</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px"><div><div class="sec" style="margin-bottom:8px">By Road Surface</div>'+bar('Asphalt (HMA)',bSu.asphalt,n,'#888888')+bar('Concrete (PCC)',bSu.concrete,n,'#c8c8c8')+bar('Red Brick',bSu.brick,n,'#c0392b')+'<div class="sec" style="margin:12px 0 8px">By Method</div>'+Object.entries(bM).map(([k,v])=>bar(MM[k]?.abbr||k,v,n,MM[k]?.color||'#888')).join('')+'<div class="sec" style="margin:12px 0 8px">By Priority</div>'+bar('P1 Emergency',bP.p1,n,'#ff4f6a')+bar('P2 Urgent',bP.p2,n,'#ffaa00')+bar('P3 Routine',bP.p3,n,'#00c97a')+'</div><div><div class="sec" style="margin-bottom:8px">By Status</div>'+bar('Open',bSt.open||0,n,'#ffaa00')+bar('Dispatched',bSt.dispatched||0,n,'#0099ff')+bar('In Progress',bSt['in-progress']||0,n,'#ff6a1a')+bar('Complete',bSt.complete||0,n,'#00c97a')+bar('Verified',bSt.verified||0,n,'#19c3b2')+'<div class="sec" style="margin:12px 0 8px">Top Wards</div>'+topW.map(([k,v])=>bar(k,v,n,'#a855f7')).join('')+(rrrpBlocks.length?'<div class="sec" style="margin:12px 0 8px">RRRP Program</div>'+bar('Planned',rrrpBlocks.filter(b=>b.status==="planned").length,rrrpBlocks.length,'var(--text3)')+bar('Scheduled',rrrpBlocks.filter(b=>b.status==="scheduled").length,rrrpBlocks.length,'var(--amber)')+bar('In Progress',rrrpBlocks.filter(b=>b.status==="in-progress").length,rrrpBlocks.length,'var(--accent)')+bar('Complete',rrrpBlocks.filter(b=>b.status==="complete").length,rrrpBlocks.length,'var(--green)')+'<div style="margin-top:8px" class="stat-grid"><div class="stat-card"><div class="sv a">'+rrrpBlocks.reduce((s,b)=>s+b.lm,0).toFixed(1)+'</div><div class="sl">Lane Miles</div></div><div class="stat-card"><div class="sv t">$'+(rrrpBlocks.reduce((s,b)=>s+b.cost,0)/1e6).toFixed(1)+'M</div><div class="sl">RRRP Budget</div></div></div>':'')+'</div></div>';
+  sI('analytics-main',html);sI('stats-content',html);}
+
+// RRRP
+const RRRP_ML={'mill-overlay':'Mill & Overlay','full-depth':'Full-Depth Reclamation','microsurface':'Micro-Surfacing + Overlay','base-repair':'Base Repair + HMA'};
+const RRRP_SC={planned:'var(--text3)',scheduled:'var(--amber)','in-progress':'var(--accent)',complete:'var(--green)'};
+function addRRRP(){const street=document.getElementById('rp-street').value.trim();if(!street){notify('Street name required','amber');return;}rrrpBlocks.push({id:'RRRP-'+Date.now(),street,ward:document.getElementById('rp-ward').value||'—',lm:parseFloat(document.getElementById('rp-lm').value)||0,pci:parseInt(document.getElementById('rp-pci').value)||45,date:document.getElementById('rp-date').value||'',method:document.getElementById('rp-method').value,cost:parseFloat(document.getElementById('rp-cost').value)||0,status:'planned',pctDone:0,notes:document.getElementById('rp-notes').value||''});renderRRRP();updateRRRPBadge();['rp-street','rp-lm','rp-pci','rp-date','rp-cost','rp-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});notify('RRRP block added','green');}
+function loadSampleRRRP(){rrrpBlocks=RRRP_S.map((b,i)=>({...b,id:'RRRP-S'+String(i+1).padStart(3,'0')}));renderRRRP();updateRRRPBadge();notify('Loaded '+rrrpBlocks.length+' RRRP blocks','green');}
+function updateRRRPBadge(){sS('b-rrrp',rrrpBlocks.length+' RRRP');const tLM=rrrpBlocks.reduce((s,b)=>s+b.lm,0);const tC=rrrpBlocks.reduce((s,b)=>s+b.cost,0);sI('rrrp-stats','<div class="sec">Program Summary</div><div class="stat-grid"><div class="stat-card"><div class="sv a">'+rrrpBlocks.length+'</div><div class="sl">Blocks</div></div><div class="stat-card"><div class="sv b">'+tLM.toFixed(1)+'</div><div class="sl">Lane Miles</div></div><div class="stat-card"><div class="sv c">$'+(tC/1e6).toFixed(1)+'M</div><div class="sl">Est. Cost</div></div><div class="stat-card"><div class="sv g">'+rrrpBlocks.filter(b=>b.status==='complete').length+'</div><div class="sl">Complete</div></div></div>');}
+function renderRRRP(){const el=document.getElementById('rrrp-list');if(!el)return;if(!rrrpBlocks.length){el.innerHTML='<div class="empty"><div class="eicon">🏘</div><div>No RRRP blocks yet.<br>Use the form or load samples.</div></div>';return;}el.innerHTML=rrrpBlocks.map(b=>'<div class="rrrp-card"><div class="rrrp-head"><div><div style="font-size:13px;font-weight:700;color:var(--amber)">'+b.street+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+b.ward+' · '+(RRRP_ML[b.method]||b.method)+' · '+b.lm+' LM</div></div><div style="text-align:right"><div style="font-size:12px;font-weight:700;color:'+(RRRP_SC[b.status]||'var(--text2)')+'">'+b.status.toUpperCase()+'</div><div style="font-size:11px;color:var(--amber);margin-top:2px">$'+b.cost.toLocaleString()+'</div></div></div><div class="rrrp-body"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px"><span>PCI: <strong style="color:'+pciCol(b.pci)+'">'+b.pci+'</strong></span><span>Date: '+(b.date||'TBD')+'</span><span>Progress: <strong style="color:var(--accent)">'+b.pctDone+'%</strong></span></div><div class="pci-bar" style="margin-bottom:8px"><div class="pci-fill" style="width:'+b.pctDone+'%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--text2);margin-bottom:8px">'+b.notes+'</div><div style="display:flex;gap:5px;flex-wrap:wrap">'+['planned','scheduled','in-progress','complete'].map(s=>'<button class="btn btn-s bsm" style="'+(b.status===s?'border-color:var(--accent);color:var(--accent)':'')+'" onclick="setRSt(\''+b.id+'\',\''+s+'\')">'+s+'</button>').join('')+'<button class="btn bsm" style="background:rgba(255,106,26,.15);color:var(--accent);border:1px solid rgba(255,106,26,.3)" onclick="rPct(\''+b.id+'\')">% Update</button><button class="btn btn-d bsm" onclick="delRRRP(\''+b.id+'\')">✕</button></div></div></div>').join('');}
+function setRSt(id,st){const b=rrrpBlocks.find(x=>x.id===id);if(!b)return;b.status=st;if(st==='complete')b.pctDone=100;renderRRRP();updateRRRPBadge();notify('RRRP → '+st,'green');}
+function rPct(id){const b=rrrpBlocks.find(x=>x.id===id);if(!b)return;const p=parseInt(prompt('% complete for:\n'+b.street,b.pctDone));if(isNaN(p))return;b.pctDone=Math.min(100,Math.max(0,p));renderRRRP();notify('Progress: '+b.pctDone+'%','green');}
+function delRRRP(id){rrrpBlocks=rrrpBlocks.filter(x=>x.id!==id);renderRRRP();updateRRRPBadge();notify('RRRP block removed','amber');}
+
+// ROUTE
+function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.asin(Math.sqrt(x));}
+function nnRoute(pts,s){const res=[],rem=[...pts];let cur=s;while(rem.length){let mi=0,md=Infinity;rem.forEach((p,i)=>{const d=hav(cur,p);if(d<md){md=d;mi=i;}});res.push(rem.splice(mi,1)[0]);cur=res[res.length-1];}return res;}
+function twoOpt(r){let imp=true;while(imp){imp=false;for(let i=0;i<r.length-1;i++){for(let j=i+1;j<r.length;j++){const d1=hav(r[i],r[(i+1)%r.length])+hav(r[j],r[(j+1)%r.length]);const d2=hav(r[i],r[j])+hav(r[(i+1)%r.length],r[(j+1)%r.length]);if(d2<d1-.0001){r=[...r.slice(0,i+1),...r.slice(i+1,j+1).reverse(),...r.slice(j+1)];imp=true;}}}}return r;}
+function totD(dep,stops){if(!stops.length)return 0;let d=hav(dep,stops[0]);for(let i=0;i<stops.length-1;i++)d+=hav(stops[i],stops[i+1]);return d;}
+function optimizeRoute(){const inR=lots.filter(l=>l.inRoute);if(inR.length<2){notify('Add at least 2 repairs to route first','amber');return;}const dep={lat:parseFloat(document.getElementById('dep-lat').value),lng:parseFloat(document.getElementById('dep-lng').value)};const algo=document.getElementById('opt-algo').value;let ord;if(algo==='nn')ord=nnRoute([...inR],dep);else if(algo==='tsp')ord=twoOpt(nnRoute([...inR],dep));else if(algo==='priority'){const pw={p1:0,p2:1,p3:2};ord=[...inR].sort((a,b)=>pw[a.priority]-pw[b.priority]||hav(dep,a)-hav(dep,b));}else ord=[...inR].sort((a,b)=>a.zone.localeCompare(b.zone)||hav(dep,a)-hav(dep,b));routeStops=ord;const crew=document.getElementById('rt-crew').value;if(crew)routeStops.forEach(s=>{const l=lots.find(x=>x.id===s.id);if(l)l.assignedCrew=crew;});drawRoute(dep);renderRoutePanel();refreshMarkers();notify('Route optimized: '+ord.length+' stops · '+totD(dep,ord).toFixed(1)+' km','green');}
+function drawRoute(dep){if(routeLine){map.removeLayer(routeLine);routeLine=null;}if(depotMk){map.removeLayer(depotMk);depotMk=null;}if(!routeStops.length||!MS.routes)return;routeLine=L.polyline([[dep.lat,dep.lng],...routeStops.map(l=>[l.lat,l.lng])],{color:'#ff6a1a',weight:2.5,opacity:.75,dashArray:'8 5'}).addTo(map);depotMk=L.marker([dep.lat,dep.lng],{icon:L.divIcon({className:'',iconAnchor:[26,11],html:'<div style="background:#19c3b2;color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.5)">CITY YARD</div>'})}).addTo(map);}
+function renderRoutePanel(){const el=document.getElementById('rt-stops');const sum=document.getElementById('rt-summary');if(!el)return;if(!routeStops.length){el.innerHTML='<div class="empty"><div class="eicon">🗺</div><div>No route yet.</div></div>';if(sum)sum.style.display='none';return;}const dep={lat:parseFloat(document.getElementById('dep-lat').value),lng:parseFloat(document.getElementById('dep-lng').value)};const td=totD(dep,routeStops),th=routeStops.reduce((s,l)=>s+l.estimatedHours,0),tc=routeStops.reduce((s,l)=>s+(l.costEst||0),0);if(sum){sum.style.display='block';sI('rt-meta','<div class="rmc"><div class="rmv">'+routeStops.length+'</div><div class="rml">Stops</div></div><div class="rmc"><div class="rmv">'+td.toFixed(1)+'</div><div class="rml">km</div></div><div class="rmc"><div class="rmv">'+th.toFixed(1)+'</div><div class="rml">Hrs</div></div><div class="rmc"><div class="rmv">$'+(tc/1000).toFixed(0)+'K</div><div class="rml">Cost</div></div>');}let cum=0;el.innerHTML='<div style="padding:8px">'+routeStops.map((l,i)=>{cum+=i===0?hav(dep,l):hav(routeStops[i-1],l);return'<div class="route-stop"><div class="snum">'+(i+1)+'</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+l.address.split(',')[0]+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+mB(l.method)+sB(l.surface||'asphalt')+' <span style="color:'+pCol(l.priority)+'">'+l.priority.toUpperCase()+'</span></div><div style="font-size:10px;color:var(--text3);margin-top:1px">'+l.estimatedHours+'h · '+cum.toFixed(2)+'km · PCI '+l.pci+'</div></div><button class="btn btn-d bsm" onclick="removeStop(\''+l.id+'\')">✕</button></div>';}).join('')+'</div>';}
+function clearRoute(){routeStops.forEach(s=>{const l=lots.find(x=>x.id===s.id);if(l){l.inRoute=false;l.assignedCrew=null;}});routeStops=[];if(routeLine){map.removeLayer(routeLine);routeLine=null;}if(depotMk){map.removeLayer(depotMk);depotMk=null;}renderRoutePanel();refreshMarkers();updateStats();notify('Route cleared','amber');}
+function addFilteredToRoute(){let n=0;filtered().forEach(l=>{if(!l.inRoute){l.inRoute=true;routeStops.push(l);n++;}});refreshMarkers();updateStats();renderRoutePanel();notify(n?'Added '+n+' to route':'All already in route',n?'green':'amber');}
+function addToRoute(id){const l=lots.find(x=>x.id===id);if(!l)return;if(l.inRoute){notify('Already in route','amber');return;}l.inRoute=true;routeStops.push(l);refreshIcon(id);updateStats();renderRoutePanel();notify('Added to route','green');}
+function removeStop(id){const l=lots.find(x=>x.id===id);if(l)l.inRoute=false;routeStops=routeStops.filter(s=>s.id!==id);if(routeLine){map.removeLayer(routeLine);routeLine=null;}if(depotMk){map.removeLayer(depotMk);depotMk=null;}refreshIcon(id);updateStats();renderRoutePanel();}
+
+// CREWS
+function addCrew(){const name=document.getElementById('cr-name').value.trim();if(!name){notify('Crew name required','amber');return;}const colors=['#ff6a1a','#19c3b2','#0099ff','#a855f7','#ffcc00','#00c97a'];crews.push({id:'c'+Date.now(),name,spec:document.getElementById('cr-spec').value,cap:parseInt(document.getElementById('cr-cap').value)||6,shift:document.getElementById('cr-shift').value,color:colors[crews.length%colors.length]});renderCrews();updateCrewSels();document.getElementById('cr-name').value='';notify('Crew "'+name+'" added','green');}
+function renderCrews(){const el=document.getElementById('crew-list');if(!el)return;if(!crews.length){el.innerHTML='<div class="empty"><div class="eicon">👷</div><div>No crews yet.</div></div>';return;}el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">'+crews.map(c=>{const n=lots.filter(l=>l.assignedCrew===c.name).length;return'<div class="crew-card"><div class="cav" style="background:'+c.color+'22;color:'+c.color+'">'+c.name.slice(0,2).toUpperCase()+'</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">'+c.name+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+c.spec+' · '+c.cap+' members · '+c.shift+'</div><div style="height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;background:'+c.color+';width:'+Math.min(100,n/Math.max(1,c.cap)*100)+'%"></div></div><div style="font-size:10px;color:var(--text3);margin-top:3px">'+n+' repairs assigned</div></div><button class="btn btn-d bsm" onclick="delCrew(\''+c.id+'\')">✕</button></div>';}).join('')+'</div>';}
+function delCrew(id){crews=crews.filter(c=>c.id!==id);renderCrews();updateCrewSels();notify('Crew removed','amber');}
+function updateCrewSels(){const sel=document.getElementById('rt-crew');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">— None —</option>'+crews.map(c=>'<option value="'+c.name+'"'+(c.name===cur?' selected':'')+'>'+c.name+'</option>').join('');}
+
+// CRUD
+function addLot(){
+  const addr=document.getElementById('np-addr').value.trim();
+  const lat=parseFloat(document.getElementById('np-lat').value);
+  const lng=parseFloat(document.getElementById('np-lng').value);
+  if(!addr){notify('Street address is required','amber');return;}
+  if(isNaN(lat)||isNaN(lng)){notify('Latitude and longitude are required to place a pin on the map','amber');return;}
+  const method=document.getElementById('np-method').value;
+  const surface=document.getElementById('np-surface').value;
+  const pci=parseInt(document.getElementById('np-pci').value)||45;
+  const area=parseInt(document.getElementById('np-area').value)||20;
+  lots.push({id:document.getElementById('np-id').value||'RRTS-'+Date.now(),method,surface,
+    address:addr.includes('OH')?addr:addr+', OH',lat,lng,
+    neighborhood:'Manual Entry',ward:'—',priority:document.getElementById('np-pri').value,
+    status:'open',distressType:document.getElementById('np-type').value||'Unspecified',
+    pci,areaSY:area,reportSource:'Manual Entry',
+    requestDate:new Date().toISOString().slice(0,10),estCompDate:'',completedDate:'',
+    assignedCrew:null,inRoute:false,zone:'Custom',
+    notes:document.getElementById('np-notes').value||'',
+    estimatedHours:+(area*0.05).toFixed(1),costEst:Math.round(area*45)});
+  refreshMarkers();clearForm();notify('Repair added! Click the 🗺 Map tab to see it on the map.','green');}
+function clearForm(){['np-id','np-addr','np-lat','np-lng','np-type','np-pci','np-area','np-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+function delLot(id){if(!confirm('Delete this repair?'))return;lots=lots.filter(l=>l.id!==id);routeStops=routeStops.filter(s=>s.id!==id);if(markers[id]){map.removeLayer(markers[id]);delete markers[id];}selId=null;renderDetail(null);refreshMarkers();notify('Repair deleted','red');}
+function useMyLocation(){const btn=document.getElementById('np-geo');if(!navigator.geolocation){notify('Geolocation not supported','red');return;}const orig=btn.textContent;btn.disabled=true;btn.textContent='Locating…';navigator.geolocation.getCurrentPosition(p=>{document.getElementById('np-lat').value=p.coords.latitude.toFixed(5);document.getElementById('np-lng').value=p.coords.longitude.toFixed(5);btn.disabled=false;btn.textContent=orig;notify('Location captured','green');},()=>{btn.disabled=false;btn.textContent=orig;notify('Location failed — type coordinates manually','red');});}
+
+// EXPORT
+function exportCSV(){const t=routeStops.length?routeStops:lots;if(!t.length){notify('No repairs to export','amber');return;}let csv='ID,Address,Ward,Neighborhood,Surface,Method,Distress,PCI,SY,Priority,Status,Est Cost,Hours,Source,Requested,Notes\n';t.forEach(l=>{csv+='"'+l.id+'","'+l.address+'","'+l.ward+'","'+l.neighborhood+'","'+(SM[l.surface||'asphalt']?.label||'')+'","'+(MM[l.method]?.label||l.method)+'","'+l.distressType+'",'+l.pci+','+l.areaSY+',"'+l.priority+'","'+stL(l.status)+'",'+( l.costEst||0)+','+l.estimatedHours+',"'+l.reportSource+'","'+l.requestDate+'","'+(l.notes||'').replace(/"/g,"'")+'"'+'\n';});dl(csv,'text/csv','CityCLE_RRTS_'+new Date().toISOString().slice(0,10)+'.csv');notify('Exported '+t.length+' repairs','green');}
+function exportGeoJSON(){dl(JSON.stringify({type:'FeatureCollection',features:lots.map(l=>({type:'Feature',geometry:{type:'Point',coordinates:[l.lng,l.lat]},properties:{...l}}))},null,2),'application/geo+json','CityCLE_RRTS.geojson');notify('GeoJSON exported','green');}
+
+// SAMPLE
+function loadSample(){lots=genLots(ADDRS);if(!crews.length)crews=[{id:'c1',name:'Crew Alpha — SP5E',cap:8,spec:'Bergkamp SP5E',shift:'Day (6AM–2PM)',color:'#ff8855'},{id:'c2',name:'Crew Bravo — Kasi IR',cap:6,spec:'Kasi IR Patriot',shift:'Day (6AM–2PM)',color:'#19c3b2'},{id:'c3',name:'Crew Charlie — JCB',cap:3,spec:'JCB Pothole Pro',shift:'Day (6AM–2PM)',color:'#0099ff'},{id:'c4',name:'Crew Delta — Saw Cut',cap:7,spec:'Saw Cut R&R',shift:'Swing (2PM–10PM)',color:'#a855f7'},{id:'c5',name:'Crew Echo — RRRP',cap:12,spec:'RRRP Paving',shift:'Day (6AM–2PM)',color:'#ffcc00'}];refreshMarkers();renderCrews();updateCrewSels();fitAll();notify('Loaded '+lots.length+' road repair records','green');}
+function clearAll(){lots=[];routeStops=[];Object.values(markers).forEach(m=>map.removeLayer(m));markers={};if(routeLine){map.removeLayer(routeLine);routeLine=null;}if(depotMk){map.removeLayer(depotMk);depotMk=null;}selId=null;updateStats();renderLotList();renderRoutePanel();renderDetail(null);notify('All data cleared','red');}
+
+// TABS
+const TABS=['map','repairs','rrrp','routes','crews','analytics','settings'];
+function ST(t){TABS.forEach((n,i)=>{document.getElementById('pane-'+n).classList.toggle('on',n===t);document.querySelectorAll('.htab')[i].classList.toggle('on',n===t);});if(t==='map')setTimeout(()=>map.invalidateSize(),80);if(t==='repairs')renderRegistry();if(t==='rrrp')renderRRRP();if(t==='routes')renderRoutePanel();if(t==='crews')renderCrews();if(t==='analytics')renderAnalytics();}
+function SD(tab){['info','photos','edit','stats'].forEach((t,i)=>{document.getElementById('dp-'+t).style.display=t===tab?'':'none';document.querySelectorAll('.stab')[i]?.classList.toggle('on',t===tab);});if(tab==='photos')renderPhotosTab();if(tab==='stats')renderAnalytics();if(tab==='edit'&&selId){const l=lots.find(x=>x.id===selId);if(l)renderEditPanel(l);}}
+
+// NOTIFY
+function notify(msg,type='green'){const c={green:'var(--green)',amber:'var(--amber)',red:'var(--red)',blue:'var(--accent3)'};const el=document.createElement('div');el.className='notif';el.style.borderLeftColor=c[type]||c.green;el.style.color=c[type]||c.green;el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3500);}
+
+// INIT
+document.addEventListener('DOMContentLoaded',async()=>{
+  await initDB();
+  initMap();
+  loadSample();
+  loadSampleRRRP();
+  updatePhotoBadge();
+});
+</script>
+</body></html>
